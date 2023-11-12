@@ -1,0 +1,31 @@
+version: '3'
+
+services:
+  postgres_db:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      - POSTGRES_DB=$DATABASE_NAME
+      - POSTGRES_USER=$DATABASE_USER
+      - POSTGRES_PASSWORD=$DATABASE_PASSWORD
+    ports:
+      - $DATABASE_PORT:5432
+    networks:
+      - app-network
+  api: 
+    build: .
+    depends_on:
+      - postgres_db
+    restart: always
+    networks:
+      - app-network
+    ports:
+      - $PORT:$PORT
+    env_file:
+      - .env
+    environment:
+      - DATABASE_HOST=postgres_db
+      
+networks:
+  app-network:
+    driver: bridge
