@@ -16,7 +16,7 @@ export class PropertyTranslationEntity {
   @Column()
   propertyId: number
 
-  @ManyToOne(() => PropertyEntity, (property) => property.translations)
+  @ManyToOne(() => PropertyEntity, (property) => property.translations, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'itemId', referencedColumnName: 'id' })
   property: PropertyEntity
 }

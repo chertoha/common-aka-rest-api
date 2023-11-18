@@ -21,9 +21,6 @@ export class ArticleEntity {
   @Column()
   name: string
 
-  @Column('json')
-  tab: Record<string, unknown>
-
   @Column('json', { nullable: true })
   model3d?: string
 

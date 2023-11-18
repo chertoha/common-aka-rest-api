@@ -1,19 +1,20 @@
 import { ApiPropertyOptional } from '@nestjs/swagger'
+import { IsArray, IsInt, IsOptional, IsPositive } from 'class-validator'
 import { Type } from 'class-transformer'
-import { IsInt, IsOptional, IsPositive } from 'class-validator'
 
-export class PaginationDto {
+export class ItemListFiltersDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsInt()
   @IsPositive()
   @Type(() => Number)
-  page?: number
+  brandId?: number
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsInt()
-  @IsPositive()
+  @IsArray()
+  @IsInt({ each: true })
+  @IsPositive({ each: true })
   @Type(() => Number)
-  perPage?: number
+  itemsIds?: number[]
 }

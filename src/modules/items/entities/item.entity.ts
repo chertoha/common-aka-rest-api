@@ -12,7 +12,7 @@ import {
 import { ItemTranslationEntity } from './item-translation.entity'
 import { ArticleEntity } from './article.entity'
 import { PropertyEntity } from './property.entity'
-import { ItemImages } from '../types/item-images.type'
+import { ItemImageDto } from '../dto/item-image.dto'
 
 @Entity({ name: 'items' })
 export class ItemEntity {
@@ -20,19 +20,13 @@ export class ItemEntity {
   id: number
 
   @Column('json')
-  images: ItemImages
+  images: ItemImageDto
 
   @Column()
   purchaseName: string
 
   @Column()
   publicName: string
-
-  @Column('float')
-  price: number
-
-  @Column('float', { nullable: true })
-  discount?: number
 
   @Column()
   brandId: number
@@ -58,6 +52,10 @@ export class ItemEntity {
 
   get title() {
     return this.translations[0]?.title || null
+  }
+
+  get titleSlug() {
+    return this.translations[0]?.titleSlug || null
   }
 
   get shortTitle() {

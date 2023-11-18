@@ -14,6 +14,9 @@ export class ItemTranslationEntity {
   @Column('text')
   title: string
 
+  @Column('text', { unique: true })
+  titleSlug: string
+
   @Column()
   shortTitle: string
 
@@ -26,7 +29,7 @@ export class ItemTranslationEntity {
   @Column()
   itemId: number
 
-  @ManyToOne(() => ItemEntity, (item) => item.translations)
+  @ManyToOne(() => ItemEntity, (item) => item.translations, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'itemId', referencedColumnName: 'id' })
   item: ItemEntity
 }

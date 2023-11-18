@@ -5,6 +5,8 @@ import { ConfigModuleOptions } from 'src/config'
 import { UsersModule } from './modules/users/users.module'
 import { ItemsModule } from './modules/items/items.module'
 import { BrandsModule } from './modules/brands/brands.module'
+import { APP_PIPE } from '@nestjs/core'
+import { ValidationPipe } from './modules/common/pipes/validation.pipe'
 
 @Module({
   imports: [
@@ -18,6 +20,11 @@ import { BrandsModule } from './modules/brands/brands.module'
     BrandsModule
   ],
   controllers: [],
-  providers: []
+  providers: [
+    {
+      provide: APP_PIPE, // <-- here
+      useValue: new ValidationPipe()
+    }
+  ]
 })
 export class AppModule {}

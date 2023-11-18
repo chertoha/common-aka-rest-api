@@ -55,4 +55,8 @@ export class PropertyEntity {
 
   @UpdateDateColumn()
   updatedAt: Date
+
+  get title() {
+    return this.translations[0]?.title || null
+  }
 }
