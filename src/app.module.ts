@@ -3,6 +3,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { ConfigModuleOptions } from 'src/config'
 import { UsersModule } from './modules/users/users.module'
+import { ItemsModule } from './modules/items/items.module'
+import { BrandsModule } from './modules/brands/brands.module'
+import { APP_PIPE } from '@nestjs/core'
+import { ValidationPipe } from './modules/common/pipes/validation.pipe'
 
 @Module({
   imports: [
@@ -11,9 +15,16 @@ import { UsersModule } from './modules/users/users.module'
       useFactory: async (config: ConfigService) => await config.get('db'),
       inject: [ConfigService]
     }),
-    UsersModule
+    UsersModule,
+    ItemsModule,
+    BrandsModule
   ],
   controllers: [],
-  providers: []
+  providers: [
+    {
+      provide: APP_PIPE,
+      useValue: new ValidationPipe()
+    }
+  ]
 })
 export class AppModule {}

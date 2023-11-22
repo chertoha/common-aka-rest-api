@@ -9,8 +9,6 @@ export const ConfigFactory = registerAs('app', () => {
 })
 
 export const Schema = {
-  NODE_ENV: Joi.string()
-    .valid('development', 'production', 'test')
-    .default('development'),
+  NODE_ENV: Joi.string().valid('development', 'production', 'test').default('development'),
   PORT: Joi.number().integer().required()
 }
