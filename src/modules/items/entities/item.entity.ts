@@ -4,6 +4,8 @@ import {
   CreateDateColumn,
   Entity,
   JoinColumn,
+  JoinTable,
+  ManyToMany,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -36,13 +38,21 @@ export class ItemEntity {
   brand: BrandEntity
 
   @OneToMany(() => ItemTranslationEntity, (translation) => translation.item)
-  translations: ItemTranslationEntity
+  translations: ItemTranslationEntity[]
 
   @OneToMany(() => ArticleEntity, (article) => article.item)
   articles: ArticleEntity[]
 
   @OneToMany(() => PropertyEntity, (article) => article.item)
   properties: PropertyEntity[]
+
+  @ManyToMany(() => ItemEntity)
+  @JoinTable({
+    name: 'item_alternatives',
+    joinColumn: { name: 'itemId' },
+    inverseJoinColumn: { name: 'alternativeId' }
+  })
+  alternatives: ItemEntity[]
 
   @CreateDateColumn()
   createdAt: Date
@@ -51,22 +61,26 @@ export class ItemEntity {
   updatedAt: Date
 
   get title() {
-    return this.translations[0]?.title || null
+    return this.currentTranslation?.title || null
   }
 
   get titleSlug() {
-    return this.translations[0]?.titleSlug || null
+    return this.currentTranslation?.titleSlug || null
   }
 
   get shortTitle() {
-    return this.translations[0]?.shortTitle || null
+    return this.currentTranslation?.shortTitle || null
   }
 
   get description() {
-    return this.translations[0]?.description || null
+    return this.currentTranslation?.description || null
   }
 
   get shortDescription() {
-    return this.translations[0]?.shortDescription || null
+    return this.currentTranslation?.shortDescription || null
+  }
+
+  protected get currentTranslation(): ItemTranslationEntity {
+    return this.translations?.length ? this.translations[0] : null
   }
 }

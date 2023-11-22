@@ -9,6 +9,7 @@ import { type ItemsListSortingParamsDto } from '../dto/items-list-sorting-params
 import { SortingOrder } from 'src/modules/common/enums/sorting-order-enum'
 import { type ItemListFiltersDto } from '../dto/item-list.filters.dto'
 import { type LanguageEnum } from 'src/modules/common/enums/language.enum'
+import { Injectable } from '@nestjs/common'
 
 export interface ItemsListParams {
   language: LanguageEnum
@@ -16,6 +17,7 @@ export interface ItemsListParams {
   sortingParams: ItemsListSortingParamsDto
   filters: ItemListFiltersDto
 }
+@Injectable()
 export class ItemListQuery implements DatabaseQuery<ItemsListParams, ItemListDto> {
   constructor(
     @InjectRepository(ItemEntity)

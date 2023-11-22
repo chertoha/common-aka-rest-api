@@ -16,6 +16,7 @@ export class ArticleFactory extends BaseFactory<ArticleEntity> {
 
   get template(): Partial<ArticleEntity> {
     return {
+      name: faker.lorem.word(),
       model3d: faker.internet.url(),
       pdf: faker.internet.url(),
       weight: faker.number.int({ min: 1, max: 999 }),

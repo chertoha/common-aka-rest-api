@@ -3,8 +3,6 @@ import {
   CreateDateColumn,
   Entity,
   JoinColumn,
-  JoinTable,
-  ManyToMany,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -42,28 +40,12 @@ export class ArticleEntity {
   @Column()
   itemId: number
 
-  @ManyToOne(() => ItemEntity, (item) => item.articles)
+  @ManyToOne(() => ItemEntity, (item) => item.articles, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'itemId', referencedColumnName: 'id' })
   item: ItemEntity
 
   @OneToMany(() => PropertyEntity, (article) => article.item)
   properties: PropertyEntity[]
-
-  @ManyToMany(() => ItemEntity)
-  @JoinTable({
-    name: 'item_alternatives',
-    joinColumn: { name: 'itemId' },
-    inverseJoinColumn: { name: 'alternativeId' }
-  })
-  alternatives: ItemEntity[]
-
-  @ManyToMany(() => ItemEntity)
-  @JoinTable({
-    name: 'suitable_for_items',
-    joinColumn: { name: 'itemId' },
-    inverseJoinColumn: { name: 'suitableForId' }
-  })
-  suitableFor: ItemEntity[]
 
   @CreateDateColumn()
   createdAt: Date

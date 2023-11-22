@@ -22,7 +22,7 @@ import { ValidationPipe } from './modules/common/pipes/validation.pipe'
   controllers: [],
   providers: [
     {
-      provide: APP_PIPE, // <-- here
+      provide: APP_PIPE,
       useValue: new ValidationPipe()
     }
   ]

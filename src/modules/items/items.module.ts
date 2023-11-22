@@ -7,6 +7,7 @@ import { ArticleEntity } from './entities/article.entity'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { ItemsController } from './controllers/items.controller'
 import { ItemListQuery } from './queries/item-list.query'
+import { ItemQuery } from './queries/item.query'
 
 @Module({
   imports: [
@@ -19,6 +20,6 @@ import { ItemListQuery } from './queries/item-list.query'
     ])
   ],
   controllers: [ItemsController],
-  providers: [ItemListQuery]
+  providers: [ItemListQuery, ItemQuery]
 })
 export class ItemsModule {}

@@ -1,7 +1,10 @@
 import * as request from 'supertest'
 import { Test } from '@nestjs/testing'
+import { stringify } from 'qs'
+import { getRepositoryToken } from '@nestjs/typeorm'
+import { type Repository } from 'typeorm'
 import { type INestApplication } from '@nestjs/common'
-import { AppModule } from '../../../../src/app.module'
+import { AppModule } from 'src/app.module'
 import { FactoryModule } from 'test/factories/factory.module'
 import { ItemFactory } from 'test/factories/item.factory'
 import { BrandFactory } from 'test/factories/brand.factory'
@@ -10,14 +13,21 @@ import { type ItemTranslationEntity } from 'src/modules/items/entities/item-tran
 import { ItemEntity } from 'src/modules/items/entities/item.entity'
 import { ItemTranslationFactory } from 'test/factories/item-translation.factory'
 import { LanguageEnum } from 'src/modules/common/enums/language.enum'
-import { type Repository } from 'typeorm'
-import { getRepositoryToken } from '@nestjs/typeorm'
-import { stringify } from 'qs'
+import { type PropertyEntity } from 'src/modules/items/entities/property.entity'
+import { PropertyFactory } from 'test/factories/property.factory'
+import { PropertyTranslationFactory } from 'test/factories/property-translation.factory'
+import { ArticleFactory } from 'test/factories/article.factory'
+import { type ArticleEntity } from 'src/modules/items/entities/article.entity'
 
 describe('ItemsController', () => {
   let app: INestApplication
+
   let itemFactory: ItemFactory
   let itemTranslationFactory: ItemTranslationFactory
+  let propertyFactory: PropertyFactory
+  let propertyTranslationFactory: PropertyTranslationFactory
+  let articleFactory: ArticleFactory
+
   let brandFactory: BrandFactory
   let itemRepository: Repository<ItemEntity>
   let brandRepository: Repository<BrandEntity>
@@ -31,6 +41,9 @@ describe('ItemsController', () => {
     itemFactory = moduleRef.get(ItemFactory)
     itemTranslationFactory = moduleRef.get(ItemTranslationFactory)
     brandFactory = moduleRef.get(BrandFactory)
+    propertyFactory = moduleRef.get(PropertyFactory)
+    articleFactory = moduleRef.get(ArticleFactory)
+    propertyTranslationFactory = moduleRef.get(PropertyTranslationFactory)
 
     itemRepository = moduleRef.get(getRepositoryToken(ItemEntity))
     brandRepository = moduleRef.get(getRepositoryToken(BrandEntity))
@@ -159,6 +172,87 @@ describe('ItemsController', () => {
 
       const createAtValues = data.map(({ createdAt }) => createdAt)
       expect(createAtValues).toEqual(createAtValues.sort().reverse())
+    })
+
+    afterAll(async () => {
+      await itemRepository.delete({})
+      await brandRepository.delete({})
+    })
+  })
+
+  describe('GET /:language/items/:itemSlug', () => {
+    let brand: BrandEntity
+    let item: ItemEntity
+    let itemTranslations: ItemTranslationEntity[]
+    let itemProperty: PropertyEntity
+    let article: ArticleEntity
+    let articleProperty: PropertyEntity
+    let alternativeItem: ItemEntity
+    let alternativeItemTranslation: ItemTranslationEntity
+
+    beforeAll(async () => {
+      brand = await brandFactory.create()
+      alternativeItem = await itemFactory.create({ brandId: brand.id })
+      alternativeItemTranslation = await itemTranslationFactory.create({
+        itemId: alternativeItem.id,
+        language: LanguageEnum.UA
+      })
+      item = await itemFactory.create({ brandId: brand.id, alternatives: [alternativeItem] })
+      itemTranslations = await itemTranslationFactory.createMany(2, [
+        { itemId: item.id, language: LanguageEnum.RU },
+        { itemId: item.id, language: LanguageEnum.UA }
+      ])
+
+      itemProperty = await propertyFactory.create({ itemId: item.id, order: 1 })
+      await propertyTranslationFactory.create({
+        propertyId: itemProperty.id,
+        language: LanguageEnum.UA
+      })
+      await propertyFactory.create({
+        parentId: itemProperty.id,
+        title: 'test',
+        value: '40',
+        order: 1
+      })
+
+      article = await articleFactory.create({ itemId: item.id })
+      articleProperty = await propertyFactory.create({
+        articleId: article.id,
+        order: 1,
+        title: 'children-property',
+        value: '100'
+      })
+      await propertyFactory.create({ parentId: articleProperty.id, order: 1 })
+      await propertyTranslationFactory.create({
+        propertyId: itemProperty.id,
+        language: LanguageEnum.UA
+      })
+    })
+
+    it(`should return requested item`, async () => {
+      const { body } = await request(app.getHttpServer())
+        .get(`/${LanguageEnum.UA}/items/${itemTranslations[1].titleSlug}`)
+        .expect(200)
+
+      expect(body).toMatchObject({
+        id: item.id,
+        title: itemTranslations[1].title,
+        titleSlug: itemTranslations[1].titleSlug,
+        shortTitle: itemTranslations[1].shortTitle,
+        description: itemTranslations[1].description,
+        shortDescription: itemTranslations[1].shortDescription
+      })
+
+      expect(body.alternatives).toMatchObject([
+        {
+          id: alternativeItem.id,
+          title: alternativeItemTranslation.title,
+          titleSlug: alternativeItemTranslation.titleSlug,
+          shortTitle: alternativeItemTranslation.shortTitle,
+          description: alternativeItemTranslation.description,
+          shortDescription: alternativeItemTranslation.shortDescription
+        }
+      ])
     })
 
     afterAll(async () => {
