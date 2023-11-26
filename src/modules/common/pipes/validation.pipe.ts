@@ -21,6 +21,7 @@ function buildErrors(errors: ValidationError[]) {
 export class ValidationPipe extends NestValidationPipe {
   constructor() {
     super({
+      validateCustomDecorators: true,
       transform: true,
       whitelist: true,
       validationError: {

@@ -14,10 +14,7 @@ import { AuthGuard } from './guards/auth.guard'
     TypeOrmModule.forFeature([UserEntity]),
     JwtModule.registerAsync({
       global: true,
-      useFactory: async (config: ConfigService) => {
-        console.log(config.get('auth.jwtOptions'))
-        return await config.get('auth.jwtOptions')
-      },
+      useFactory: async (config: ConfigService) => await config.get('auth.jwtOptions'),
       inject: [ConfigService]
     })
   ],

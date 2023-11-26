@@ -8,9 +8,12 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 import { ItemsController } from './controllers/items.controller'
 import { ItemListQuery } from './queries/item-list.query'
 import { ItemQuery } from './queries/item.query'
+import { AuthModule } from '../auth/auth.module'
+import { ItemDeleterService } from './controllers/services/item.deleter.service'
 
 @Module({
   imports: [
+    AuthModule,
     TypeOrmModule.forFeature([
       ItemEntity,
       ItemTranslationEntity,
@@ -20,6 +23,6 @@ import { ItemQuery } from './queries/item.query'
     ])
   ],
   controllers: [ItemsController],
-  providers: [ItemListQuery, ItemQuery]
+  providers: [ItemListQuery, ItemQuery, ItemDeleterService]
 })
 export class ItemsModule {}
