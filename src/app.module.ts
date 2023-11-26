@@ -7,6 +7,7 @@ import { ItemsModule } from './modules/items/items.module'
 import { BrandsModule } from './modules/brands/brands.module'
 import { APP_PIPE } from '@nestjs/core'
 import { ValidationPipe } from './modules/common/pipes/validation.pipe'
+import { AuthModule } from './modules/auth/auth.module'
 
 @Module({
   imports: [
@@ -17,7 +18,8 @@ import { ValidationPipe } from './modules/common/pipes/validation.pipe'
     }),
     UsersModule,
     ItemsModule,
-    BrandsModule
+    BrandsModule,
+    AuthModule
   ],
   controllers: [],
   providers: [

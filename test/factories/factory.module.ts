@@ -12,6 +12,8 @@ import { PropertyEntity } from 'src/modules/items/entities/property.entity'
 import { PropertyTranslationEntity } from 'src/modules/items/entities/property-translation.entity'
 import { ItemEntity } from 'src/modules/items/entities/item.entity'
 import { ItemTranslationFactory } from './item-translation.factory'
+import { UserFactory } from './user.factory'
+import { UserEntity } from 'src/modules/users/entities/user.entity'
 
 @Module({
   providers: [
@@ -20,7 +22,8 @@ import { ItemTranslationFactory } from './item-translation.factory'
     PropertyFactory,
     PropertyTranslationFactory,
     ItemFactory,
-    ItemTranslationFactory
+    ItemTranslationFactory,
+    UserFactory
   ],
   imports: [
     TypeOrmModule.forFeature([
@@ -29,7 +32,8 @@ import { ItemTranslationFactory } from './item-translation.factory'
       PropertyEntity,
       PropertyTranslationEntity,
       ItemEntity,
-      ItemTranslationEntity
+      ItemTranslationEntity,
+      UserEntity
     ])
   ]
 })
