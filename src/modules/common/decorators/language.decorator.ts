@@ -1,4 +1,7 @@
-import { Param } from '@nestjs/common'
-import { LanguageParamValidationPipe } from '../pipes/language-param.validation.pipe'
+import { type ExecutionContext, createParamDecorator } from '@nestjs/common'
 
-export const Language = Param.bind(null, 'language', LanguageParamValidationPipe)
+export const Language = createParamDecorator(async (property: string | number | symbol, ctx: ExecutionContext) => {
+  const headers = ctx.switchToHttp().getRequest().headers
+  const language = headers['accept-language']
+  return { language }
+})
