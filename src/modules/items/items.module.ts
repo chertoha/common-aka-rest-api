@@ -9,11 +9,14 @@ import { ItemsController } from './controllers/items.controller'
 import { ItemListQuery } from './queries/item-list.query'
 import { ItemQuery } from './queries/item.query'
 import { AuthModule } from '../auth/auth.module'
-import { ItemDeleterService } from './controllers/services/item.deleter.service'
+import { ItemDeleterService } from './services/item.deleter.service'
+import { FilesModule } from '../files/files.module'
+import { ItemCreatorService } from './services/item-creator.service'
 
 @Module({
   imports: [
     AuthModule,
+    FilesModule,
     TypeOrmModule.forFeature([
       ItemEntity,
       ItemTranslationEntity,
@@ -23,6 +26,6 @@ import { ItemDeleterService } from './controllers/services/item.deleter.service'
     ])
   ],
   controllers: [ItemsController],
-  providers: [ItemListQuery, ItemQuery, ItemDeleterService]
+  providers: [ItemListQuery, ItemQuery, ItemCreatorService, ItemDeleterService]
 })
 export class ItemsModule {}

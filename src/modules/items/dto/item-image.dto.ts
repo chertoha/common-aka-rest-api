@@ -1,9 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger'
 import { Expose, Type } from 'class-transformer'
+import { IsDefined, IsString } from 'class-validator'
 
 export class ImageLinkDto {
   @ApiProperty()
   @Expose()
+  @IsDefined()
+  @IsString()
   url: string
 
   @ApiProperty()
@@ -12,7 +15,7 @@ export class ImageLinkDto {
 }
 export class ItemImageDto {
   @ApiProperty()
-  preview: string
+  preview: ImageLinkDto
 
   @ApiProperty({ type: () => ImageLinkDto })
   @Expose()

@@ -9,7 +9,7 @@ import { FactoryModule } from 'test/factories-module/factory.module'
 import { ItemFactory } from 'test/factories-module/factories/item.factory'
 import { BrandFactory } from 'test/factories-module/factories/brand.factory'
 import { BrandEntity } from 'src/modules/brands/entities/brand.entity'
-import { type ItemTranslationEntity } from 'src/modules/items/entities/item-translation.entity'
+import { ItemTranslationEntity } from 'src/modules/items/entities/item-translation.entity'
 import { ItemEntity } from 'src/modules/items/entities/item.entity'
 import { ItemTranslationFactory } from 'test/factories-module/factories/item-translation.factory'
 import { LanguageEnum } from 'src/modules/common/enums/language.enum'
@@ -22,6 +22,9 @@ import { TestAuthService } from 'test/test-core-module/services/test-auth.servic
 import { type UserEntity } from 'src/modules/users/entities/user.entity'
 import { UserFactory } from 'test/factories-module/factories/user.factory'
 import { TestCoreModule } from 'test/test-core-module/test-core-module'
+import { serialize } from 'test/test-core-module/utils/object-to-form-data.util'
+import { cleanDirectory } from 'test/test-core-module/utils/fs.utils'
+import { join } from 'path'
 
 describe('ItemsController', () => {
   let app: INestApplication
@@ -35,6 +38,7 @@ describe('ItemsController', () => {
 
   let brandFactory: BrandFactory
   let itemRepository: Repository<ItemEntity>
+  let itemTranslationRepository: Repository<ItemTranslationEntity>
   let brandRepository: Repository<BrandEntity>
   let testAuthService: TestAuthService
 
@@ -54,6 +58,7 @@ describe('ItemsController', () => {
 
     itemRepository = moduleRef.get(getRepositoryToken(ItemEntity))
     brandRepository = moduleRef.get(getRepositoryToken(BrandEntity))
+    itemTranslationRepository = moduleRef.get(getRepositoryToken(ItemTranslationEntity))
     testAuthService = moduleRef.get(TestAuthService)
 
     await app.init()
@@ -258,6 +263,155 @@ describe('ItemsController', () => {
 
     afterAll(async () => {
       await itemRepository.delete({})
+      await brandRepository.delete({})
+    })
+  })
+
+  describe('POST /items/', () => {
+    let brand: BrandEntity
+    let user: UserEntity
+    let payload
+
+    beforeAll(async () => {
+      brand = await brandFactory.create()
+      user = await userFactory.create()
+    })
+
+    beforeEach(() => {
+      payload = {
+        brandId: brand.id,
+        purchaseName: 'purchase-name',
+        publicName: 'public-name',
+        translations: [
+          {
+            ...itemTranslationFactory.template,
+            language: LanguageEnum.RU
+          },
+          {
+            ...itemTranslationFactory.template,
+            language: LanguageEnum.UA
+          }
+        ]
+      }
+    })
+
+    it('should return item in response', async () => {
+      const { body } = await request(app.getHttpServer())
+        .post(`/items/`)
+        .attach('preview', 'test/fixtures/images/test.png')
+        .attach('gallery', 'test/fixtures/images/test.png')
+        .attach('gallery', 'test/fixtures/images/test.png')
+        .attach('drawings', 'test/fixtures/images/test.png')
+        .attach('drawings', 'test/fixtures/images/test.png')
+        .field(serialize(payload))
+        .set('Authorization', testAuthService.generateToken(user))
+        .expect(200)
+
+      expect(body).toMatchObject({
+        id: expect.any(Number),
+        purchaseName: payload.purchaseName,
+        publicName: payload.publicName
+      })
+    })
+
+    it('should return item to database response', async () => {
+      await request(app.getHttpServer())
+        .post(`/items/`)
+        .attach('preview', 'test/fixtures/images/test.png')
+        .attach('gallery', 'test/fixtures/images/test.png')
+        .attach('gallery', 'test/fixtures/images/test.png')
+        .attach('drawings', 'test/fixtures/images/test.png')
+        .attach('drawings', 'test/fixtures/images/test.png')
+        .field(serialize(payload))
+        .set('Authorization', testAuthService.generateToken(user))
+        .expect(200)
+
+      await expect(
+        itemRepository.findOne({
+          where: {
+            purchaseName: payload.purchaseName,
+            publicName: payload.publicName
+          }
+        })
+      ).resolves.toBeInstanceOf(ItemEntity)
+    })
+
+    it('should save translations to db', async () => {
+      await request(app.getHttpServer())
+        .post(`/items/`)
+        .attach('preview', 'test/fixtures/images/test.png')
+        .attach('gallery', 'test/fixtures/images/test.png')
+        .attach('gallery', 'test/fixtures/images/test.png')
+        .attach('drawings', 'test/fixtures/images/test.png')
+        .attach('drawings', 'test/fixtures/images/test.png')
+        .field(serialize(payload))
+        .set('Authorization', testAuthService.generateToken(user))
+        .expect(200)
+
+      await expect(
+        itemTranslationRepository.findOne({
+          where: payload.translations[0]
+        })
+      ).resolves.toBeInstanceOf(ItemTranslationEntity)
+
+      await expect(
+        itemTranslationRepository.findOne({
+          where: payload.translations[1]
+        })
+      ).resolves.toBeInstanceOf(ItemTranslationEntity)
+    })
+
+    it('should save images', async () => {
+      const { body } = await request(app.getHttpServer())
+        .post(`/items/`)
+        .attach('preview', 'test/fixtures/images/test.png')
+        .attach('gallery', 'test/fixtures/images/test.png')
+        .attach('gallery', 'test/fixtures/images/test.png')
+        .attach('drawings', 'test/fixtures/images/test.png')
+        .attach('drawings', 'test/fixtures/images/test.png')
+        .field(serialize(payload))
+        .set('Authorization', testAuthService.generateToken(user))
+        .expect(200)
+
+      expect(body.images).toMatchObject({
+        preview: {
+          url: `item/${body.id}/test.png`,
+          thumbnail: `item/${body.id}/test-thumbnail.png`,
+          mobileThumbnail: `item/${body.id}/test-mobileThumbnail.png`
+        },
+        gallery: [
+          {
+            url: `item/${body.id}/gallery/0/test.png`,
+            thumbnail: `item/${body.id}/gallery/0/test-thumbnail.png`,
+            mobileThumbnail: `item/${body.id}/gallery/0/test-mobileThumbnail.png`
+          },
+          {
+            url: `item/${body.id}/gallery/1/test.png`,
+            thumbnail: `item/${body.id}/gallery/1/test-thumbnail.png`,
+            mobileThumbnail: `item/${body.id}/gallery/1/test-mobileThumbnail.png`
+          }
+        ],
+        drawings: [
+          {
+            url: `item/${body.id}/drawings/0/test.png`,
+            thumbnail: `item/${body.id}/drawings/0/test-thumbnail.png`,
+            mobileThumbnail: `item/${body.id}/drawings/0/test-mobileThumbnail.png`
+          },
+          {
+            url: `item/${body.id}/drawings/1/test.png`,
+            thumbnail: `item/${body.id}/drawings/1/test-thumbnail.png`,
+            mobileThumbnail: `item/${body.id}/drawings/1/test-mobileThumbnail.png`
+          }
+        ]
+      })
+    })
+
+    afterEach(async () => {
+      await itemRepository.delete({})
+    })
+
+    afterAll(async () => {
+      await cleanDirectory(join(process.cwd(), 'public'))
       await brandRepository.delete({})
     })
   })

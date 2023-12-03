@@ -8,6 +8,8 @@ import { BrandsModule } from './modules/brands/brands.module'
 import { APP_PIPE } from '@nestjs/core'
 import { ValidationPipe } from './modules/common/pipes/validation.pipe'
 import { AuthModule } from './modules/auth/auth.module'
+import { ServeStaticModule } from '@nestjs/serve-static'
+import { join } from 'path'
 
 @Module({
   imports: [
@@ -19,7 +21,11 @@ import { AuthModule } from './modules/auth/auth.module'
     UsersModule,
     ItemsModule,
     BrandsModule,
-    AuthModule
+    AuthModule,
+    ServeStaticModule.forRoot({
+      rootPath: join(process.cwd(), 'public'),
+      serveRoot: '/public'
+    })
   ],
   controllers: [],
   providers: [
