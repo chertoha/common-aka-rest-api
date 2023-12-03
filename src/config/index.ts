@@ -3,13 +3,15 @@ import * as Joi from 'joi'
 import * as AppConfig from './app.config'
 import * as DbConfig from './db.config'
 import * as AuthConfig from './auth.config'
+import * as PreviewsConfig from './previews.config'
+import * as FilesConfig from './files.config'
 
 export interface Config {
   ConfigFactory: ConfigFactory
   Schema?: Record<string, Joi.AnySchema>
 }
 
-const configs: Config[] = [AppConfig, DbConfig, AuthConfig]
+const configs: Config[] = [AppConfig, DbConfig, AuthConfig, PreviewsConfig, FilesConfig]
 
 const factories = configs.map(({ ConfigFactory }) => ConfigFactory)
 

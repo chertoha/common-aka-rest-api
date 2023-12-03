@@ -27,7 +27,7 @@ export class ItemEntity {
   @Column()
   purchaseName: string
 
-  @Column()
+  @Column({ nullable: true })
   publicName: string
 
   @Column()
@@ -37,7 +37,7 @@ export class ItemEntity {
   @JoinColumn({ name: 'brandId', referencedColumnName: 'id' })
   brand: BrandEntity
 
-  @OneToMany(() => ItemTranslationEntity, (translation) => translation.item)
+  @OneToMany(() => ItemTranslationEntity, (translation) => translation.item, { cascade: true })
   translations: ItemTranslationEntity[]
 
   @OneToMany(() => ArticleEntity, (article) => article.item)

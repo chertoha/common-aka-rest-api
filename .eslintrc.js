@@ -28,5 +28,6 @@ module.exports = {
     '@typescript-eslint/prefer-nullish-coalescing': 'off',
     '@typescript-eslint/no-floating-promises': 'off',
     '@typescript-eslint/consistent-type-assertions': 'off',
+    '@typescript-eslint/prefer-reduce-type-parameter': 'off',
   },
 };

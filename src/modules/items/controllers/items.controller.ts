@@ -1,4 +1,18 @@
-import { Controller, Delete, Get, Param, ParseIntPipe, Query, UseFilters, UseGuards } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  ParseIntPipe,
+  Post,
+  Query,
+  UploadedFiles,
+  UseFilters,
+  UseGuards,
+  UseInterceptors
+} from '@nestjs/common'
 import { PaginationDto } from 'src/modules/common/dto/pagination.dto'
 import { type ItemListDto } from '../dto/item-list.dto'
 import { ItemListQuery } from '../queries/item-list.query'
@@ -10,10 +24,14 @@ import { ItemQuery } from '../queries/item.query'
 import { type ItemDto } from '../dto/item.dto'
 import { EntityNotFoundExceptionFilter } from 'src/modules/common/exception-filters/entity-not-found.exception-filter'
 import { type OperationResultDto } from 'src/modules/common/dto/operation-result.dto'
-import { ItemDeleterService } from './services/item.deleter.service'
+import { ItemDeleterService } from '../services/item.deleter.service'
 import { AuthGuard } from 'src/modules/auth/guards/auth.guard'
 import { ApiHeader } from '@nestjs/swagger'
 import { LanguageHeadersDto } from 'src/modules/common/dto/language-headers.dto'
+import { FileFieldsInterceptor } from '@nestjs/platform-express'
+import { CreateItemDto } from '../dto/create-item.dto'
+import { ItemCreatorService } from '../services/item-creator.service'
+import { type CreateItemResponseDto } from '../dto/created-item-response.dto'
 
 @Controller('items')
 @UseFilters(EntityNotFoundExceptionFilter)
@@ -22,7 +40,8 @@ export class ItemsController {
   constructor(
     protected readonly itemListQuery: ItemListQuery,
     protected readonly itemQuery: ItemQuery,
-    protected readonly itemDeleter: ItemDeleterService
+    protected readonly itemDeleter: ItemDeleterService,
+    protected readonly itemCreator: ItemCreatorService
   ) {}
 
   @Get()
@@ -48,5 +67,21 @@ export class ItemsController {
   public async delete(@Param('id', ParseIntPipe) id: number): Promise<OperationResultDto> {
     const result = await this.itemDeleter.delete(id)
     return { success: result }
+  }
+
+  @Post()
+  @HttpCode(200)
+  @UseGuards(AuthGuard)
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'preview', maxCount: 1 }, { name: 'gallery' }, { name: 'drawings' }]))
+  public async create(
+    @Body() payload: CreateItemDto,
+    @UploadedFiles()
+    {
+      preview,
+      gallery,
+      drawings
+    }: { preview?: Express.Multer.File; gallery?: Express.Multer.File[]; drawings?: Express.Multer.File[] }
+  ): Promise<CreateItemResponseDto> {
+    return await this.itemCreator.create({ ...payload, files: { preview: preview?.[0], gallery, drawings } })
   }
 }
