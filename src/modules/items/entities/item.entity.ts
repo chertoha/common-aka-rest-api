@@ -43,7 +43,7 @@ export class ItemEntity {
   @OneToMany(() => ArticleEntity, (article) => article.item)
   articles: ArticleEntity[]
 
-  @OneToMany(() => PropertyEntity, (article) => article.item)
+  @OneToMany(() => PropertyEntity, (article) => article.item, { cascade: true })
   properties: PropertyEntity[]
 
   @ManyToMany(() => ItemEntity)

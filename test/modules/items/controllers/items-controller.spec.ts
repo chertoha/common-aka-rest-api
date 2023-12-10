@@ -13,7 +13,7 @@ import { ItemTranslationEntity } from 'src/modules/items/entities/item-translati
 import { ItemEntity } from 'src/modules/items/entities/item.entity'
 import { ItemTranslationFactory } from 'test/factories-module/factories/item-translation.factory'
 import { LanguageEnum } from 'src/modules/common/enums/language.enum'
-import { type PropertyEntity } from 'src/modules/items/entities/property.entity'
+import { PropertyEntity } from 'src/modules/items/entities/property.entity'
 import { PropertyFactory } from 'test/factories-module/factories/property.factory'
 import { PropertyTranslationFactory } from 'test/factories-module/factories/property-translation.factory'
 import { ArticleFactory } from 'test/factories-module/factories/article.factory'
@@ -25,6 +25,8 @@ import { TestCoreModule } from 'test/test-core-module/test-core-module'
 import { serialize } from 'test/test-core-module/utils/object-to-form-data.util'
 import { cleanDirectory } from 'test/test-core-module/utils/fs.utils'
 import { join } from 'path'
+import { PropertyTranslationEntity } from 'src/modules/items/entities/property-translation.entity'
+import { omit } from 'lodash'
 
 describe('ItemsController', () => {
   let app: INestApplication
@@ -40,6 +42,8 @@ describe('ItemsController', () => {
   let itemRepository: Repository<ItemEntity>
   let itemTranslationRepository: Repository<ItemTranslationEntity>
   let brandRepository: Repository<BrandEntity>
+  let propertyRepository: Repository<PropertyEntity>
+  let propertyTranslationRepository: Repository<PropertyTranslationEntity>
   let testAuthService: TestAuthService
 
   beforeAll(async () => {
@@ -58,6 +62,8 @@ describe('ItemsController', () => {
 
     itemRepository = moduleRef.get(getRepositoryToken(ItemEntity))
     brandRepository = moduleRef.get(getRepositoryToken(BrandEntity))
+    propertyRepository = moduleRef.get(getRepositoryToken(PropertyEntity))
+    propertyTranslationRepository = moduleRef.get(getRepositoryToken(PropertyTranslationEntity))
     itemTranslationRepository = moduleRef.get(getRepositoryToken(ItemTranslationEntity))
     testAuthService = moduleRef.get(TestAuthService)
 
@@ -300,8 +306,6 @@ describe('ItemsController', () => {
         .post(`/items/`)
         .attach('preview', 'test/fixtures/images/test.png')
         .attach('gallery', 'test/fixtures/images/test.png')
-        .attach('gallery', 'test/fixtures/images/test.png')
-        .attach('drawings', 'test/fixtures/images/test.png')
         .attach('drawings', 'test/fixtures/images/test.png')
         .field(serialize(payload))
         .set('Authorization', testAuthService.generateToken(user))
@@ -319,8 +323,6 @@ describe('ItemsController', () => {
         .post(`/items/`)
         .attach('preview', 'test/fixtures/images/test.png')
         .attach('gallery', 'test/fixtures/images/test.png')
-        .attach('gallery', 'test/fixtures/images/test.png')
-        .attach('drawings', 'test/fixtures/images/test.png')
         .attach('drawings', 'test/fixtures/images/test.png')
         .field(serialize(payload))
         .set('Authorization', testAuthService.generateToken(user))
@@ -341,8 +343,6 @@ describe('ItemsController', () => {
         .post(`/items/`)
         .attach('preview', 'test/fixtures/images/test.png')
         .attach('gallery', 'test/fixtures/images/test.png')
-        .attach('gallery', 'test/fixtures/images/test.png')
-        .attach('drawings', 'test/fixtures/images/test.png')
         .attach('drawings', 'test/fixtures/images/test.png')
         .field(serialize(payload))
         .set('Authorization', testAuthService.generateToken(user))
@@ -403,6 +403,87 @@ describe('ItemsController', () => {
             mobileThumbnail: `item/${body.id}/drawings/1/test-mobileThumbnail.png`
           }
         ]
+      })
+    })
+
+    describe('item with properties', () => {
+      beforeEach(() => {
+        payload = {
+          ...payload,
+          properties: [
+            {
+              ...propertyFactory.template,
+              translations: [
+                { ...propertyTranslationFactory.template, language: LanguageEnum.RU },
+                { ...propertyTranslationFactory.template, language: LanguageEnum.UA }
+              ],
+              childrenProperties: [
+                {
+                  ...propertyFactory.template,
+                  translations: [
+                    { ...propertyTranslationFactory.template, language: LanguageEnum.RU },
+                    { ...propertyTranslationFactory.template, language: LanguageEnum.UA }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      })
+
+      it('should save properties to database', async () => {
+        await request(app.getHttpServer())
+          .post(`/items/`)
+          .attach('preview', 'test/fixtures/images/test.png')
+          .attach('gallery', 'test/fixtures/images/test.png')
+          .attach('drawings', 'test/fixtures/images/test.png')
+          .field(serialize(payload))
+          .set('Authorization', testAuthService.generateToken(user))
+          .expect(200)
+
+        await expect(
+          propertyRepository.findOne({
+            where: {
+              ...omit(payload.properties[0], ['translations', 'childrenProperties'])
+            }
+          })
+        ).resolves.toBeInstanceOf(PropertyEntity)
+
+        await expect(
+          propertyRepository.findOne({
+            where: {
+              ...omit(payload.properties[0].childrenProperties[0], ['translations', 'childrenProperties'])
+            }
+          })
+        ).resolves.toBeInstanceOf(PropertyEntity)
+      })
+
+      it('should save properties translations to database', async () => {
+        await request(app.getHttpServer())
+          .post(`/items/`)
+          .attach('preview', 'test/fixtures/images/test.png')
+          .attach('gallery', 'test/fixtures/images/test.png')
+          .attach('drawings', 'test/fixtures/images/test.png')
+          .field(serialize(payload))
+          .set('Authorization', testAuthService.generateToken(user))
+          .expect(200)
+
+        await expect(
+          propertyTranslationRepository.count({
+            where: payload.properties[0].translations
+          })
+        ).resolves.toEqual(2)
+
+        await expect(
+          propertyTranslationRepository.count({
+            where: payload.properties[0].childrenProperties[0].translations
+          })
+        ).resolves.toEqual(2)
+      })
+
+      afterEach(async () => {
+        await propertyRepository.delete({})
+        await propertyTranslationRepository.delete({})
       })
     })
 

@@ -19,7 +19,7 @@ export class ItemFactory extends BaseFactory<ItemEntity> {
       publicName: faker.lorem.word(),
       purchaseName: faker.lorem.word(),
       images: {
-        preview: { url: faker.image.url(), thumbnail: faker.image.url() },
+        preview: { url: faker.image.url(), thumbnail: faker.image.url(), mobileThumbnail: faker.image.url() },
         gallery: [],
         drawings: []
       }

@@ -12,9 +12,16 @@ export class ImageLinkDto {
   @ApiProperty()
   @Expose()
   thumbnail: string
+
+  @ApiProperty()
+  @Expose()
+  mobileThumbnail: string
 }
+
 export class ItemImageDto {
   @ApiProperty()
+  @Expose()
+  @Type(() => ImageLinkDto)
   preview: ImageLinkDto
 
   @ApiProperty({ type: () => ImageLinkDto })
