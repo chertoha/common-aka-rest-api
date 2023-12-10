@@ -23,19 +23,21 @@ import { ItemListFiltersDto } from '../dto/item-list.filters.dto'
 import { ItemQuery } from '../queries/item.query'
 import { type ItemDto } from '../dto/item.dto'
 import { EntityNotFoundExceptionFilter } from 'src/modules/common/exception-filters/entity-not-found.exception-filter'
-import { type OperationResultDto } from 'src/modules/common/dto/operation-result.dto'
+import { OperationResultDto } from 'src/modules/common/dto/operation-result.dto'
 import { ItemDeleterService } from '../services/item.deleter.service'
 import { AuthGuard } from 'src/modules/auth/guards/auth.guard'
-import { ApiHeader } from '@nestjs/swagger'
+import { ApiBearerAuth, ApiHeader, ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { LanguageHeadersDto } from 'src/modules/common/dto/language-headers.dto'
 import { FileFieldsInterceptor } from '@nestjs/platform-express'
 import { CreateItemDto } from '../dto/create-item.dto'
 import { ItemCreatorService } from '../services/item-creator.service'
-import { type CreateItemResponseDto } from '../dto/created-item-response.dto'
+import { type CreatedItemResponseDto } from '../dto/created-item-response.dto'
 
 @Controller('items')
 @UseFilters(EntityNotFoundExceptionFilter)
 @ApiHeader({ name: 'Accept-Language', required: true, enum: LanguageEnum })
+@ApiTags('Items')
+@ApiBearerAuth()
 export class ItemsController {
   constructor(
     protected readonly itemListQuery: ItemListQuery,
@@ -64,6 +66,7 @@ export class ItemsController {
 
   @Delete(':id')
   @UseGuards(AuthGuard)
+  @ApiOkResponse({ type: OperationResultDto })
   public async delete(@Param('id', ParseIntPipe) id: number): Promise<OperationResultDto> {
     const result = await this.itemDeleter.delete(id)
     return { success: result }
@@ -80,8 +83,8 @@ export class ItemsController {
       preview,
       gallery,
       drawings
-    }: { preview?: Express.Multer.File; gallery?: Express.Multer.File[]; drawings?: Express.Multer.File[] }
-  ): Promise<CreateItemResponseDto> {
-    return await this.itemCreator.create({ ...payload, files: { preview: preview?.[0], gallery, drawings } })
+    }: { preview?: Express.Multer.File[]; gallery?: Express.Multer.File[]; drawings?: Express.Multer.File[] }
+  ): Promise<CreatedItemResponseDto> {
+    return await this.itemCreator.create({ ...payload, files: { preview: preview?.at(0), gallery, drawings } })
   }
 }

@@ -2,8 +2,10 @@ import { Body, Controller, HttpCode, Post } from '@nestjs/common'
 import { SignInRequestDto } from '../dto/sign-in-request.dto'
 import { type SignInResponseDto } from '../dto/sign-in-response.dto'
 import { AuthService } from '../services/auth.service'
+import { ApiTags } from '@nestjs/swagger'
 
 @Controller('auth')
+@ApiTags('Auth')
 export class AuthController {
   constructor(protected readonly authService: AuthService) {}
 

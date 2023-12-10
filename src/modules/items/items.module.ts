@@ -12,9 +12,11 @@ import { AuthModule } from '../auth/auth.module'
 import { ItemDeleterService } from './services/item.deleter.service'
 import { FilesModule } from '../files/files.module'
 import { ItemCreatorService } from './services/item-creator.service'
+import { ArticlesModule } from './sub-modules/articles/articles.module'
 
 @Module({
   imports: [
+    ArticlesModule,
     AuthModule,
     FilesModule,
     TypeOrmModule.forFeature([

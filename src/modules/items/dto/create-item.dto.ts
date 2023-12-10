@@ -13,6 +13,7 @@ import {
 } from 'class-validator'
 import { LanguageEnum } from 'src/modules/common/enums/language.enum'
 import { Type } from 'class-transformer'
+import { CreatePropertyDto } from './create-property.dto'
 
 export class ItemTranslationDto {
   @ApiProperty()
@@ -77,4 +78,11 @@ export class CreateItemDto {
   @Type(() => ItemTranslationDto)
   @ValidateNested({ each: true })
   translations: ItemTranslationDto[]
+
+  @ApiProperty()
+  @IsOptional()
+  @IsArray()
+  @Type(() => CreatePropertyDto)
+  @ValidateNested({ each: true })
+  properties: CreatePropertyDto[]
 }

@@ -19,7 +19,10 @@ export class PropertyEntity {
   @PrimaryGeneratedColumn()
   id: number
 
-  @OneToMany(() => PropertyTranslationEntity, (translation) => translation.property)
+  @OneToMany(() => PropertyTranslationEntity, (translation) => translation.property, {
+    cascade: true,
+    onDelete: 'CASCADE'
+  })
   translations: PropertyTranslationEntity[]
 
   @Column({ name: 'title', nullable: true })
@@ -60,7 +63,8 @@ export class PropertyEntity {
 
   @OneToMany(() => PropertyEntity, (property) => property.childrenProperties, {
     nullable: true,
-    onDelete: 'CASCADE'
+    onDelete: 'CASCADE',
+    cascade: ['insert']
   })
   childrenProperties?: PropertyEntity[]
 

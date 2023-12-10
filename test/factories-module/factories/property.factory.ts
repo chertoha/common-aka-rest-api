@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { PropertyEntity } from 'src/modules/items/entities/property.entity'
+import { faker } from '@faker-js/faker'
 
 @Injectable()
 export class PropertyFactory extends BaseFactory<PropertyEntity> {
@@ -14,6 +15,9 @@ export class PropertyFactory extends BaseFactory<PropertyEntity> {
   }
 
   get template(): Partial<PropertyEntity> {
-    return {}
+    return {
+      order: faker.number.int({ min: 1, max: 1000 }),
+      value: faker.lorem.word()
+    }
   }
 }

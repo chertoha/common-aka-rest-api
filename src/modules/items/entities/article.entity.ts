@@ -19,10 +19,10 @@ export class ArticleEntity {
   @Column()
   name: string
 
-  @Column('json', { nullable: true })
+  @Column('text', { nullable: true })
   model3d?: string
 
-  @Column('json', { nullable: true })
+  @Column('text', { nullable: true })
   pdf?: string
 
   @Column('float')

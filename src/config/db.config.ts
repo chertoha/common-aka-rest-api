@@ -11,7 +11,8 @@ export const ConfigFactory = registerAs('db', () => {
     database: process.env.DATABASE_NAME,
     username: process.env.DATABASE_USER,
     password: process.env.DATABASE_PASSWORD,
-    entities: [join(__dirname, '/../**/*.entity.{ts,js}')]
+    entities: [join(__dirname, '/../**/*.entity.{ts,js}')],
+    logging: !!process.env.DB_DEBUG
   } satisfies TypeOrmModuleOptions
 })
 
