@@ -59,28 +59,4 @@ export class ItemEntity {
 
   @UpdateDateColumn()
   updatedAt: Date
-
-  get title() {
-    return this.currentTranslation?.title || null
-  }
-
-  get titleSlug() {
-    return this.currentTranslation?.titleSlug || null
-  }
-
-  get shortTitle() {
-    return this.currentTranslation?.shortTitle || null
-  }
-
-  get description() {
-    return this.currentTranslation?.description || null
-  }
-
-  get shortDescription() {
-    return this.currentTranslation?.shortDescription || null
-  }
-
-  protected get currentTranslation(): ItemTranslationEntity {
-    return this.translations?.length ? this.translations[0] : null
-  }
 }

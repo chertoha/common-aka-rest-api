@@ -6,15 +6,17 @@ import { mapOneToDto } from 'src/modules/common/utils/serialization.utils'
 import { type ItemsListSortingParamsDto } from '../dto/items-list-sorting-params.dto'
 import { SortingOrder } from 'src/modules/common/enums/sorting-order-enum'
 import { type LanguageEnum } from 'src/modules/common/enums/language.enum'
-import { ItemDto } from '../dto/item.dto'
 import { Injectable } from '@nestjs/common'
+import { whereLanguageStatement } from './where-statements/where-language-statement'
+import { ItemResponseDto } from '../dto/item-response.dto'
 
 export interface ItemsQueryParams {
   language: LanguageEnum
-  titleSlug: string
+  titleSlug?: string
+  itemId?: number
 }
 @Injectable()
-export class ItemQuery implements DatabaseQuery<ItemsQueryParams, ItemDto> {
+export class ItemQuery implements DatabaseQuery<ItemsQueryParams, ItemResponseDto> {
   constructor(
     @InjectRepository(ItemEntity)
     protected readonly itemRepository: Repository<ItemEntity>
@@ -24,10 +26,14 @@ export class ItemQuery implements DatabaseQuery<ItemsQueryParams, ItemDto> {
     return { column: '"createdAt"', order: SortingOrder.DESC }
   }
 
-  public async fetch({ language, titleSlug }: ItemsQueryParams): Promise<ItemDto> {
-    const item = await this.itemRepository
+  public async fetch({ language, titleSlug, itemId }: ItemsQueryParams): Promise<ItemResponseDto> {
+    const query = this.itemRepository
       .createQueryBuilder('item')
-      .innerJoinAndSelect('item.translations', 'itemTranslation', 'itemTranslation.language = :language', { language })
+      .innerJoinAndSelect(
+        'item.translations',
+        'itemTranslation',
+        ...whereLanguageStatement('"itemTranslation".language', language)
+      )
       .leftJoinAndSelect('item.articles', 'article')
       .leftJoinAndSelect('article.properties', 'articleProperty')
       .leftJoinAndSelect(
@@ -38,33 +44,37 @@ export class ItemQuery implements DatabaseQuery<ItemsQueryParams, ItemDto> {
       .leftJoinAndSelect(
         'articleChildrenProperty.translations',
         'articleChildrenPropertiesTranslation',
-        'articleChildrenPropertiesTranslation.language = :language',
-        { language }
+        ...whereLanguageStatement('"articleChildrenPropertiesTranslation".language', language)
       )
       .leftJoinAndSelect('item.properties', 'itemProperty')
       .leftJoinAndSelect(
         'itemProperty.translations',
         'itemPropertyTranslation',
-        '"itemPropertyTranslation".language = :language',
-        { language }
+        ...whereLanguageStatement('"itemPropertyTranslation".language', language)
       )
       .leftJoinAndSelect('properties', 'itemChildrenProperty', '"itemProperty".id = "itemChildrenProperty"."parentId"')
       .leftJoinAndSelect(
         'itemChildrenProperty.translations',
         'itemChildrenPropertyTranslation',
-        '"itemChildrenPropertyTranslation".language = :language',
-        { language }
+        ...whereLanguageStatement('"itemChildrenPropertyTranslation".language', language)
       )
       .leftJoinAndSelect('item.alternatives', 'alternative')
       .leftJoinAndSelect(
         'alternative.translations',
         'alternativeTranslation',
-        '"alternativeTranslation".language = :language',
-        { language }
+        ...whereLanguageStatement('"alternativeTranslation".language', language)
       )
-      .andWhere('itemTranslation.titleSlug = :titleSlug', { titleSlug })
-      .getOneOrFail()
 
-    return mapOneToDto(ItemDto, item)
+    if (itemId) {
+      query.andWhere('item.id = :itemId', { itemId })
+    }
+
+    if (titleSlug) {
+      query.andWhere('"itemTranslation"."titleSlug" = :titleSlug', { titleSlug })
+    }
+
+    const item = await query.getOne()
+
+    return mapOneToDto(ItemResponseDto, item)
   }
 }

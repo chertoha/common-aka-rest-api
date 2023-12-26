@@ -1,8 +1,8 @@
-import { IsDefined, IsEnum } from 'class-validator'
+import { IsEnum, IsOptional } from 'class-validator'
 import { LanguageEnum } from '../enums/language.enum'
 
 export class LanguageHeadersDto {
-  @IsDefined()
+  @IsOptional()
   @IsEnum(LanguageEnum)
-  language: LanguageEnum
+  language?: LanguageEnum
 }

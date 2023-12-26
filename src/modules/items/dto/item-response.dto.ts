@@ -3,6 +3,7 @@ import { LanguageEnum } from 'src/modules/common/enums/language.enum'
 import { Expose, Type } from 'class-transformer'
 import { ItemImageDto } from './item-image.dto'
 import { CreatedPropertyResponseDto } from './created-property-response.dto'
+import { AlternativeItemDto } from './alternative-item.dto'
 
 export class ItemTranslationDto {
   @ApiProperty()
@@ -30,7 +31,7 @@ export class ItemTranslationDto {
   language: LanguageEnum
 }
 
-export class CreatedItemResponseDto {
+export class ItemResponseDto {
   @ApiProperty()
   @Expose()
   id: number
@@ -61,4 +62,17 @@ export class CreatedItemResponseDto {
   @Type(() => CreatedPropertyResponseDto)
   @Expose()
   properties: CreatedPropertyResponseDto[]
+
+  @ApiProperty({ isArray: true, type: AlternativeItemDto })
+  @Type(() => AlternativeItemDto)
+  @Expose()
+  alternatives: AlternativeItemDto[]
+
+  @ApiProperty()
+  @Expose()
+  createdAt: Date
+
+  @ApiProperty()
+  @Expose()
+  updatedAt: Date
 }

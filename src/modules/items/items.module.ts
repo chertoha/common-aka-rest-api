@@ -13,6 +13,8 @@ import { ItemDeleterService } from './services/item.deleter.service'
 import { FilesModule } from '../files/files.module'
 import { ItemCreatorService } from './services/item-creator.service'
 import { ArticlesModule } from './sub-modules/articles/articles.module'
+import { ItemFileManager } from './services/item-files-manager.service'
+import { ItemUpdaterService } from './services/item-updater.service'
 
 @Module({
   imports: [
@@ -28,6 +30,6 @@ import { ArticlesModule } from './sub-modules/articles/articles.module'
     ])
   ],
   controllers: [ItemsController],
-  providers: [ItemListQuery, ItemQuery, ItemCreatorService, ItemDeleterService]
+  providers: [ItemFileManager, ItemListQuery, ItemQuery, ItemCreatorService, ItemUpdaterService, ItemDeleterService]
 })
 export class ItemsModule {}

@@ -26,7 +26,7 @@ export class PropertyEntity {
   translations: PropertyTranslationEntity[]
 
   @Column({ name: 'title', nullable: true })
-  _title: string
+  title: string
 
   @Column({ name: 'value', nullable: true })
   value: string
@@ -73,12 +73,4 @@ export class PropertyEntity {
 
   @UpdateDateColumn()
   updatedAt: Date
-
-  get title() {
-    return this._title || this.currentTranslation?.title || null
-  }
-
-  protected get currentTranslation(): PropertyTranslationEntity {
-    return this.translations?.length ? this.translations[0] : null
-  }
 }

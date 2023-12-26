@@ -133,11 +133,18 @@ describe('ItemsController', () => {
       expect(data.length).toBe(1)
 
       expect(data[0]).toMatchObject({
-        title: translations[1].title,
-        titleSlug: translations[1].titleSlug,
-        shortTitle: translations[1].shortTitle,
-        shortDescription: translations[1].shortDescription,
-        description: translations[1].description
+        id: items[0].id,
+        images: expect.any(Object),
+        brandId: items[0].brandId,
+        translations: [
+          {
+            title: translations[1].title,
+            titleSlug: translations[1].titleSlug,
+            shortTitle: translations[1].shortTitle,
+            shortDescription: translations[1].shortDescription,
+            description: translations[1].description
+          }
+        ]
       })
     })
 
@@ -151,11 +158,18 @@ describe('ItemsController', () => {
       expect(data.length).toBe(1)
 
       expect(data[0]).toMatchObject({
-        title: translations[0].title,
-        titleSlug: translations[0].titleSlug,
-        shortTitle: translations[0].shortTitle,
-        shortDescription: translations[0].shortDescription,
-        description: translations[0].description
+        id: items[0].id,
+        images: expect.any(Object),
+        brandId: items[0].brandId,
+        translations: [
+          {
+            title: translations[0].title,
+            titleSlug: translations[0].titleSlug,
+            shortTitle: translations[0].shortTitle,
+            shortDescription: translations[0].shortDescription,
+            description: translations[0].description
+          }
+        ]
       })
     })
 
@@ -248,21 +262,33 @@ describe('ItemsController', () => {
 
       expect(body).toMatchObject({
         id: item.id,
-        title: itemTranslations[1].title,
-        titleSlug: itemTranslations[1].titleSlug,
-        shortTitle: itemTranslations[1].shortTitle,
-        description: itemTranslations[1].description,
-        shortDescription: itemTranslations[1].shortDescription
+        createdAt: expect.any(String),
+        brandId: brand.id,
+        publicName: item.publicName,
+        purchaseName: item.purchaseName,
+        translations: [
+          {
+            title: itemTranslations[1].title,
+            titleSlug: itemTranslations[1].titleSlug,
+            shortTitle: itemTranslations[1].shortTitle,
+            description: itemTranslations[1].description,
+            shortDescription: itemTranslations[1].shortDescription
+          }
+        ]
       })
 
       expect(body.alternatives).toMatchObject([
         {
           id: alternativeItem.id,
-          title: alternativeItemTranslation.title,
-          titleSlug: alternativeItemTranslation.titleSlug,
-          shortTitle: alternativeItemTranslation.shortTitle,
-          description: alternativeItemTranslation.description,
-          shortDescription: alternativeItemTranslation.shortDescription
+          translations: [
+            {
+              title: alternativeItemTranslation.title,
+              titleSlug: alternativeItemTranslation.titleSlug,
+              shortTitle: alternativeItemTranslation.shortTitle,
+              description: alternativeItemTranslation.description,
+              shortDescription: alternativeItemTranslation.shortDescription
+            }
+          ]
         }
       ])
     })
@@ -493,6 +519,156 @@ describe('ItemsController', () => {
 
     afterAll(async () => {
       await cleanDirectory(join(process.cwd(), 'public'))
+      await brandRepository.delete({})
+    })
+  })
+
+  describe('PUT /items/:id', () => {
+    let brand: BrandEntity
+    let item: ItemEntity
+    let itemProperty: PropertyEntity
+    let itemTranslationProperty: ItemTranslationEntity
+    let alternativeItem: ItemEntity
+    let user: UserEntity
+    let payload
+
+    beforeAll(async () => {
+      brand = await brandFactory.create()
+      user = await userFactory.create()
+    })
+
+    beforeEach(async () => {
+      item = await itemFactory.create({ brandId: brand.id, alternatives: [alternativeItem] })
+      itemTranslationProperty = await itemTranslationFactory.create({ itemId: item.id, language: LanguageEnum.UA })
+
+      itemProperty = await propertyFactory.create({ itemId: item.id, order: 1 })
+      await propertyTranslationFactory.create({
+        propertyId: itemProperty.id,
+        language: LanguageEnum.UA
+      })
+      await propertyFactory.create({
+        parentId: itemProperty.id,
+        title: 'test',
+        value: '40',
+        order: 1
+      })
+    })
+
+    beforeEach(() => {
+      payload = {
+        brandId: brand.id,
+        purchaseName: 'purchase-name',
+        publicName: 'public-name',
+        translations: [
+          {
+            ...itemTranslationFactory.template,
+            language: LanguageEnum.UA
+          }
+        ]
+      }
+    })
+
+    it(`should update item in database`, async () => {
+      const { body } = await request(app.getHttpServer())
+        .put(`/items/${item.id}`)
+        .set('Authorization', testAuthService.generateToken(user))
+        .field(serialize(payload))
+        .expect(200)
+
+      expect(body).toMatchObject({
+        id: item.id,
+        createdAt: expect.any(String),
+        brandId: brand.id,
+        publicName: payload.publicName,
+        purchaseName: payload.purchaseName,
+        translations: [
+          {
+            title: payload.translations[0].title,
+            titleSlug: payload.translations[0].titleSlug,
+            shortTitle: payload.translations[0].shortTitle,
+            description: payload.translations[0].description,
+            shortDescription: payload.translations[0].shortDescription
+          }
+        ]
+      })
+    })
+
+    it(`should delete existed related entities and save new records`, async () => {
+      await request(app.getHttpServer())
+        .put(`/items/${item.id}`)
+        .set('Authorization', testAuthService.generateToken(user))
+        .field(serialize(payload))
+        .expect(200)
+
+      await expect(itemTranslationRepository.findOne({ where: { id: itemTranslationProperty.id } })).resolves.toBeNull()
+      await expect(itemRepository.findOne({ where: { id: itemProperty.id } })).resolves.toBeNull()
+    })
+
+    it('should save images', async () => {
+      const { body } = await request(app.getHttpServer())
+        .put(`/items/${item.id}`)
+        .attach('preview', 'test/fixtures/images/test.png')
+        .attach('gallery', 'test/fixtures/images/test.png')
+        .attach('gallery', 'test/fixtures/images/test.png')
+        .attach('drawings', 'test/fixtures/images/test.png')
+        .attach('drawings', 'test/fixtures/images/test.png')
+        .field(serialize(payload))
+        .set('Authorization', testAuthService.generateToken(user))
+        .expect(200)
+
+      expect(body.images).toMatchObject({
+        preview: {
+          url: `item/${body.id}/test.png`,
+          thumbnail: `item/${body.id}/test-thumbnail.png`,
+          mobileThumbnail: `item/${body.id}/test-mobileThumbnail.png`
+        },
+        gallery: [
+          {
+            url: `item/${body.id}/gallery/0/test.png`,
+            thumbnail: `item/${body.id}/gallery/0/test-thumbnail.png`,
+            mobileThumbnail: `item/${body.id}/gallery/0/test-mobileThumbnail.png`
+          },
+          {
+            url: `item/${body.id}/gallery/1/test.png`,
+            thumbnail: `item/${body.id}/gallery/1/test-thumbnail.png`,
+            mobileThumbnail: `item/${body.id}/gallery/1/test-mobileThumbnail.png`
+          }
+        ],
+        drawings: [
+          {
+            url: `item/${body.id}/drawings/0/test.png`,
+            thumbnail: `item/${body.id}/drawings/0/test-thumbnail.png`,
+            mobileThumbnail: `item/${body.id}/drawings/0/test-mobileThumbnail.png`
+          },
+          {
+            url: `item/${body.id}/drawings/1/test.png`,
+            thumbnail: `item/${body.id}/drawings/1/test-thumbnail.png`,
+            mobileThumbnail: `item/${body.id}/drawings/1/test-mobileThumbnail.png`
+          }
+        ]
+      })
+    })
+
+    it(`should return unauthorized error, auth token was not provided`, async () => {
+      await request(app.getHttpServer())
+        .put(`/items/${item.id}`)
+        .field(serialize(payload))
+        .expect(401, { message: 'Unauthorized', statusCode: 401 })
+    })
+
+    it(`should return not success result, database record does not exist`, async () => {
+      await request(app.getHttpServer())
+        .put(`/items/${item.id + 1}`)
+        .set('Authorization', testAuthService.generateToken(user))
+        .field(serialize(payload))
+        .expect(404, { error: 'EntityNotFoundError', statusCode: 404 })
+    })
+
+    afterEach(async () => {
+      await itemRepository.delete({})
+    })
+
+    afterAll(async () => {
       await brandRepository.delete({})
     })
   })
