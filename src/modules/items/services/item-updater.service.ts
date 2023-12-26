@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common'
-import { type CreateItemDto } from '../dto/create-item.dto'
 import { ItemEntity } from '../entities/item.entity'
 import { Repository } from 'typeorm'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -8,11 +7,12 @@ import { PropertyEntity } from '../entities/property.entity'
 import { PropertyTranslationEntity } from '../entities/property-translation.entity'
 import { type ItemFiles } from '../types/item-files.type'
 import { ItemFileManager } from './item-files-manager.service'
+import { type UpdateItemDto } from '../dto/update-item.dto'
 
-export type Payload = CreateItemDto & { files: ItemFiles }
+export type Payload = UpdateItemDto & { itemId: number; files: ItemFiles }
 
 @Injectable()
-export class ItemCreatorService {
+export class ItemUpdaterService {
   constructor(
     protected readonly itemFileManager: ItemFileManager,
     @InjectRepository(ItemEntity)
@@ -23,7 +23,8 @@ export class ItemCreatorService {
     protected readonly propertyTranslationRepository: Repository<PropertyTranslationEntity>
   ) {}
 
-  public async create({
+  public async update({
+    itemId,
     files,
     alternatives,
     translations,
@@ -36,13 +37,20 @@ export class ItemCreatorService {
       const propertyRepository = manager.getRepository(PropertyEntity)
       const propertyTranslationRepository = manager.getRepository(PropertyTranslationEntity)
 
+      const item = await itemRepository.findOneOrFail({ where: { id: itemId } })
+
+      await itemTranslationRepository.delete({ itemId })
+      await propertyRepository.delete({ itemId })
+      await manager
+        .createQueryBuilder()
+        .delete()
+        .from('item_alternatives')
+        .where('itemId = :itemId', { itemId })
+        .execute()
+
       const translationEntities = translations.map((translation) => itemTranslationRepository.create(translation))
-      const item = await itemRepository.save(
-        itemRepository.create({
-          ...itemProperties,
-          images: {},
-          translations: translationEntities
-        })
+      const updatedItem = await itemRepository.save(
+        itemRepository.merge(item, { ...itemProperties, translations: translationEntities })
       )
 
       if (alternatives?.length) {
@@ -81,10 +89,17 @@ export class ItemCreatorService {
         )
       }
 
-      const images = await this.itemFileManager.storeFiles(files, item.id)
-      await itemRepository.update({ id: item.id }, { images })
+      if (this.areFilesAttached(files)) {
+        await this.itemFileManager.deleteItemFiles(item.id)
+        const images = await this.itemFileManager.storeFiles(files, item.id)
+        await itemRepository.update({ id: item.id }, { images })
+      }
 
-      return item
+      return updatedItem
     })
+  }
+
+  protected areFilesAttached({ preview, gallery, drawings }: ItemFiles): boolean {
+    return Boolean(preview) && !!gallery?.length && !!drawings?.length
   }
 }

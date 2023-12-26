@@ -14,7 +14,7 @@ import { Type } from 'class-transformer'
 import { CreatePropertyDto } from './create-property.dto'
 import { CreateItemTranslationDto } from './item-translation.dto'
 
-export class CreateItemDto {
+export class UpdateItemDto {
   @ApiProperty()
   @IsDefined()
   @IsString()

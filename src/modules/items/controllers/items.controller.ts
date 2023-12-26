@@ -7,6 +7,7 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Put,
   Query,
   UploadedFiles,
   UseFilters,
@@ -21,7 +22,6 @@ import { LanguageEnum } from 'src/modules/common/enums/language.enum'
 import { Language } from 'src/modules/common/decorators/language.decorator'
 import { ItemListFiltersDto } from '../dto/item-list.filters.dto'
 import { ItemQuery } from '../queries/item.query'
-import { type ItemDto } from '../dto/item.dto'
 import { EntityNotFoundExceptionFilter } from 'src/modules/common/exception-filters/entity-not-found.exception-filter'
 import { OperationResultDto } from 'src/modules/common/dto/operation-result.dto'
 import { ItemDeleterService } from '../services/item.deleter.service'
@@ -31,11 +31,13 @@ import { LanguageHeadersDto } from 'src/modules/common/dto/language-headers.dto'
 import { FileFieldsInterceptor } from '@nestjs/platform-express'
 import { CreateItemDto } from '../dto/create-item.dto'
 import { ItemCreatorService } from '../services/item-creator.service'
-import { type CreatedItemResponseDto } from '../dto/created-item-response.dto'
+import { UpdateItemDto } from '../dto/update-item.dto'
+import { ItemResponseDto } from '../dto/item-response.dto'
+import { ItemUpdaterService } from '../services/item-updater.service'
 
 @Controller('items')
 @UseFilters(EntityNotFoundExceptionFilter)
-@ApiHeader({ name: 'Accept-Language', required: true, enum: LanguageEnum })
+@ApiHeader({ name: 'Accept-Language', enum: LanguageEnum })
 @ApiTags('Items')
 @ApiBearerAuth()
 export class ItemsController {
@@ -43,7 +45,8 @@ export class ItemsController {
     protected readonly itemListQuery: ItemListQuery,
     protected readonly itemQuery: ItemQuery,
     protected readonly itemDeleter: ItemDeleterService,
-    protected readonly itemCreator: ItemCreatorService
+    protected readonly itemCreator: ItemCreatorService,
+    protected readonly itemUpdater: ItemUpdaterService
   ) {}
 
   @Get()
@@ -60,7 +63,7 @@ export class ItemsController {
   public async show(
     @Language() { language }: LanguageHeadersDto,
     @Param('itemSlug') titleSlug: string
-  ): Promise<ItemDto> {
+  ): Promise<ItemResponseDto> {
     return await this.itemQuery.fetch({ language, titleSlug })
   }
 
@@ -75,7 +78,9 @@ export class ItemsController {
   @Post()
   @HttpCode(200)
   @UseGuards(AuthGuard)
+  @ApiOkResponse({ type: OperationResultDto })
   @UseInterceptors(FileFieldsInterceptor([{ name: 'preview', maxCount: 1 }, { name: 'gallery' }, { name: 'drawings' }]))
+  @ApiOkResponse({ type: ItemResponseDto })
   public async create(
     @Body() payload: CreateItemDto,
     @UploadedFiles()
@@ -84,7 +89,33 @@ export class ItemsController {
       gallery,
       drawings
     }: { preview?: Express.Multer.File[]; gallery?: Express.Multer.File[]; drawings?: Express.Multer.File[] }
-  ): Promise<CreatedItemResponseDto> {
-    return await this.itemCreator.create({ ...payload, files: { preview: preview?.at(0), gallery, drawings } })
+  ): Promise<ItemResponseDto> {
+    const createdItem = await this.itemCreator.create({
+      ...payload,
+      files: { preview: preview?.at(0), gallery, drawings }
+    })
+    return await this.itemQuery.fetch({ language: null, itemId: createdItem.id })
+  }
+
+  @Put(':id')
+  @UseGuards(AuthGuard)
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'preview', maxCount: 1 }, { name: 'gallery' }, { name: 'drawings' }]))
+  @ApiOkResponse({ type: ItemResponseDto })
+  public async update(
+    @Param('id', ParseIntPipe) itemId: number,
+    @Body() payload: UpdateItemDto,
+    @UploadedFiles()
+    {
+      preview,
+      gallery,
+      drawings
+    }: { preview?: Express.Multer.File[]; gallery?: Express.Multer.File[]; drawings?: Express.Multer.File[] }
+  ): Promise<ItemResponseDto> {
+    const updatedItem = await this.itemUpdater.update({
+      ...payload,
+      itemId,
+      files: { preview: preview?.at(0), gallery, drawings }
+    })
+    return await this.itemQuery.fetch({ language: null, itemId: updatedItem.id })
   }
 }

@@ -8,9 +8,7 @@ import { FactoryModule } from 'test/factories-module/factory.module'
 import { ItemFactory } from 'test/factories-module/factories/item.factory'
 import { BrandFactory } from 'test/factories-module/factories/brand.factory'
 import { BrandEntity } from 'src/modules/brands/entities/brand.entity'
-import { ItemTranslationEntity } from 'src/modules/items/entities/item-translation.entity'
 import { ItemEntity } from 'src/modules/items/entities/item.entity'
-import { ItemTranslationFactory } from 'test/factories-module/factories/item-translation.factory'
 import { LanguageEnum } from 'src/modules/common/enums/language.enum'
 import { PropertyEntity } from 'src/modules/items/entities/property.entity'
 import { PropertyFactory } from 'test/factories-module/factories/property.factory'
@@ -51,7 +49,6 @@ describe('ArticlesController', () => {
 
     app = moduleRef.createNestApplication()
     itemFactory = moduleRef.get(ItemFactory)
-    itemTranslationFactory = moduleRef.get(ItemTranslationFactory)
     brandFactory = moduleRef.get(BrandFactory)
     propertyFactory = moduleRef.get(PropertyFactory)
     articleFactory = moduleRef.get(ArticleFactory)
@@ -62,7 +59,6 @@ describe('ArticlesController', () => {
     brandRepository = moduleRef.get(getRepositoryToken(BrandEntity))
     propertyRepository = moduleRef.get(getRepositoryToken(PropertyEntity))
     propertyTranslationRepository = moduleRef.get(getRepositoryToken(PropertyTranslationEntity))
-    itemTranslationRepository = moduleRef.get(getRepositoryToken(ItemTranslationEntity))
     articleRepository = moduleRef.get(getRepositoryToken(ArticleEntity))
     testAuthService = moduleRef.get(TestAuthService)
 

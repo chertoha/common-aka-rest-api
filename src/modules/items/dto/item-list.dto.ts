@@ -1,31 +1,17 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import { ItemImageDto } from './item-image.dto'
-import { Expose } from 'class-transformer'
+import { Expose, Type } from 'class-transformer'
+import { ItemTranslationDto } from './item-response.dto'
 
 export class ItemListItemDto {
   @ApiProperty()
   @Expose()
   id: number
 
-  @ApiProperty()
+  @ApiProperty({ isArray: true, type: ItemTranslationDto })
+  @Type(() => ItemTranslationDto)
   @Expose()
-  title: string
-
-  @ApiProperty()
-  @Expose()
-  titleSlug: string
-
-  @ApiProperty()
-  @Expose()
-  shortTitle: string
-
-  @ApiProperty()
-  @Expose()
-  description: string
-
-  @ApiProperty()
-  @Expose()
-  shortDescription: string
+  translations: ItemTranslationDto[]
 
   @ApiProperty({ type: () => ItemImageDto })
   @Expose()

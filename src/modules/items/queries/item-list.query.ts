@@ -10,9 +10,10 @@ import { SortingOrder } from 'src/modules/common/enums/sorting-order-enum'
 import { type ItemListFiltersDto } from '../dto/item-list.filters.dto'
 import { type LanguageEnum } from 'src/modules/common/enums/language.enum'
 import { Injectable } from '@nestjs/common'
+import { whereLanguageStatement } from './where-statements/where-language-statement'
 
 export interface ItemsListParams {
-  language: LanguageEnum
+  language?: LanguageEnum
   paginationParams: PaginationDto
   sortingParams: ItemsListSortingParamsDto
   filters: ItemListFiltersDto
@@ -35,7 +36,11 @@ export class ItemListQuery implements DatabaseQuery<ItemsListParams, ItemListDto
   public async fetch({ paginationParams, language, sortingParams, filters }: ItemsListParams): Promise<ItemListDto> {
     const query = this.itemRepository
       .createQueryBuilder('item')
-      .leftJoinAndSelect('item.translations', 'translation', 'translation.language = :language', { language })
+      .leftJoinAndSelect(
+        'item.translations',
+        'translation',
+        ...whereLanguageStatement('translation.language', language)
+      )
 
     this.applyFilters(query, filters)
     this.applySorting(query, sortingParams)
