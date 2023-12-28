@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger'
 import { Expose, Type } from 'class-transformer'
 import { CreatedPropertyResponseDto } from 'src/modules/items/dto/created-property-response.dto'
 
-export class CreatedArticleResponseDto {
+export class ArticleResponseDto {
   @ApiProperty()
   @Expose()
   id: number

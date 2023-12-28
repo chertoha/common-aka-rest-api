@@ -16,7 +16,7 @@ import { PropertyTranslationFactory } from 'test/factories-module/factories/prop
 import { ArticleFactory } from 'test/factories-module/factories/article.factory'
 import { ArticleEntity } from 'src/modules/items/entities/article.entity'
 import { TestAuthService } from 'test/test-core-module/services/test-auth.service'
-import { type UserEntity } from 'src/modules/users/entities/user.entity'
+import { UserEntity } from 'src/modules/users/entities/user.entity'
 import { UserFactory } from 'test/factories-module/factories/user.factory'
 import { TestCoreModule } from 'test/test-core-module/test-core-module'
 import { serialize } from 'test/test-core-module/utils/object-to-form-data.util'
@@ -36,6 +36,7 @@ describe('ArticlesController', () => {
 
   let brandFactory: BrandFactory
   let itemRepository: Repository<ItemEntity>
+  let userRepository: Repository<UserEntity>
   let brandRepository: Repository<BrandEntity>
   let propertyRepository: Repository<PropertyEntity>
   let propertyTranslationRepository: Repository<PropertyTranslationEntity>
@@ -60,6 +61,7 @@ describe('ArticlesController', () => {
     propertyRepository = moduleRef.get(getRepositoryToken(PropertyEntity))
     propertyTranslationRepository = moduleRef.get(getRepositoryToken(PropertyTranslationEntity))
     articleRepository = moduleRef.get(getRepositoryToken(ArticleEntity))
+    userRepository = moduleRef.get(getRepositoryToken(UserEntity))
     testAuthService = moduleRef.get(TestAuthService)
 
     await app.init()
@@ -193,6 +195,139 @@ describe('ArticlesController', () => {
       await itemRepository.delete({})
       await cleanDirectory(join(process.cwd(), 'public'))
       await brandRepository.delete({})
+    })
+  })
+
+  describe('PUT /items/:id/articles/:articleId', () => {
+    let brand: BrandEntity
+    let user: UserEntity
+    let item: ItemEntity
+    let article: ArticleEntity
+    let payload
+
+    beforeAll(async () => {
+      brand = await brandFactory.create()
+      user = await userFactory.create()
+      item = await itemFactory.create({ brandId: brand.id })
+    })
+
+    beforeEach(async () => {
+      article = await articleFactory.create({ itemId: item.id })
+
+      payload = {
+        ...omit(articleFactory.template, 'model3d', 'pdf'),
+        properties: []
+      }
+    })
+
+    afterEach(async () => {
+      await articleRepository.delete({})
+    })
+
+    afterAll(async () => {
+      await itemRepository.delete({})
+      await brandRepository.delete({})
+      await userRepository.delete({})
+
+      await cleanDirectory(join(process.cwd(), 'public'))
+    })
+
+    it('should update article', async () => {
+      const { body } = await request(app.getHttpServer())
+        .put(`/items/` + String(item.id) + '/articles/' + article.id)
+        .set('Authorization', testAuthService.generateToken(user))
+        .field(serialize(payload))
+        .expect(200)
+
+      expect(body).toMatchObject({
+        id: expect.any(Number),
+        ...omit(payload, 'pdf', 'model3d'),
+        pdf: null,
+        model3d: null
+      })
+    })
+
+    it('should update article with files', async () => {
+      const { body } = await request(app.getHttpServer())
+        .put(`/items/` + String(item.id) + '/articles/' + article.id)
+        .set('Authorization', testAuthService.generateToken(user))
+        .attach('model3d', 'test/fixtures/images/test.png')
+        .attach('pdf', 'test/fixtures/files/dummy.pdf')
+        .field(serialize(payload))
+        .expect(200)
+
+      expect(body).toMatchObject({
+        id: expect.any(Number),
+        ...omit(payload, 'pdf', 'model3d'),
+        pdf: `item/${item.id}/articles/${article.id}/dummy.pdf`,
+        model3d: `item/${item.id}/articles/${article.id}/test.png`
+      })
+    })
+
+    describe('with article property', () => {
+      let property: PropertyEntity
+
+      beforeEach(async () => {
+        property = await propertyFactory.create({ articleId: article.id })
+        payload.properties.push({
+          ...propertyFactory.template,
+          id: property.id,
+          translations: [
+            {
+              ...propertyTranslationFactory.template,
+              language: LanguageEnum.UA
+            }
+          ]
+        })
+      })
+
+      afterEach(async () => {
+        await propertyRepository.delete({})
+      })
+
+      it('should update article with property', async () => {
+        const { body } = await request(app.getHttpServer())
+          .put(`/items/` + String(item.id) + '/articles/' + article.id)
+          .set('Authorization', testAuthService.generateToken(user))
+          .field(serialize(payload))
+          .expect(200)
+
+        expect(body).toMatchObject({
+          id: expect.any(Number),
+          ...omit(payload, 'pdf', 'model3d', 'properties'),
+          properties: [
+            {
+              id: expect.any(Number),
+              createdAt: expect.any(String),
+              updatedAt: expect.any(String),
+              order: payload.properties[0].order,
+              value: payload.properties[0].value,
+              translations: [
+                {
+                  id: expect.any(Number),
+                  language: LanguageEnum.UA,
+                  title: payload.properties[0].translations[0].title
+                }
+              ]
+            }
+          ]
+        })
+      })
+    })
+
+    it('should return not found error, item was not found', async () => {
+      await request(app.getHttpServer())
+        .put(`/items/` + String(item.id) + '/articles/' + (article.id + 1))
+        .set('Authorization', testAuthService.generateToken(user))
+        .field(serialize(payload))
+        .expect(404, { error: 'EntityNotFoundError', statusCode: 404 })
+    })
+
+    it('should return unauthorized, auth token was not provided', async () => {
+      await request(app.getHttpServer())
+        .delete(`/items/` + String(item.id) + '/articles/' + (article.id + 1))
+        .field(serialize(payload))
+        .expect(401, { message: 'Unauthorized', statusCode: 401 })
     })
   })
 
