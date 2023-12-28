@@ -123,6 +123,15 @@ describe('ItemsController', () => {
       expect(data[0].id).toBe(items[0].id)
     })
 
+    it(`should return items with all translations`, async () => {
+      const { body } = await request(app.getHttpServer())
+        .get(`/items`)
+        .query(stringify({ filters: { itemsIds: [items[0].id] } }))
+
+      const { data } = body
+      expect(data[0].translations.length).toEqual(2)
+    })
+
     it(`should return selected item with ukrainian translation`, async () => {
       const { body } = await request(app.getHttpServer())
         .get(`/items`)
@@ -291,6 +300,12 @@ describe('ItemsController', () => {
           ]
         }
       ])
+    })
+
+    it(`should return requested item with all translations`, async () => {
+      const { body } = await request(app.getHttpServer()).get(`/items/${itemTranslations[1].titleSlug}`).expect(200)
+
+      expect(body.translations.length).toEqual(2)
     })
 
     afterAll(async () => {

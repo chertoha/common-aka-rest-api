@@ -9,6 +9,7 @@ import { type LanguageEnum } from 'src/modules/common/enums/language.enum'
 import { Injectable } from '@nestjs/common'
 import { whereLanguageStatement } from './where-statements/where-language-statement'
 import { ItemResponseDto } from '../dto/item-response.dto'
+import { ItemTranslationEntity } from '../entities/item-translation.entity'
 
 export interface ItemsQueryParams {
   language: LanguageEnum
@@ -70,7 +71,20 @@ export class ItemQuery implements DatabaseQuery<ItemsQueryParams, ItemResponseDt
     }
 
     if (titleSlug) {
-      query.andWhere('"itemTranslation"."titleSlug" = :titleSlug', { titleSlug })
+      query
+        .andWhere((qb) => {
+          return (
+            'item.id IN (' +
+            qb
+              .subQuery()
+              .select('item.id')
+              .from(ItemTranslationEntity, 'translation')
+              .where('translation."titleSlug" = :titleSlug')
+              .getSql() +
+            ')'
+          )
+        })
+        .setParameters({ titleSlug })
     }
 
     const item = await query.getOne()
