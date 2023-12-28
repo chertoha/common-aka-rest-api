@@ -44,7 +44,7 @@ export class ArticleEntity {
   @JoinColumn({ name: 'itemId', referencedColumnName: 'id' })
   item: ItemEntity
 
-  @OneToMany(() => PropertyEntity, (article) => article.item)
+  @OneToMany(() => PropertyEntity, (property) => property.article)
   properties: PropertyEntity[]
 
   @CreateDateColumn()

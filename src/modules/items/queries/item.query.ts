@@ -3,8 +3,6 @@ import { ItemEntity } from '../entities/item.entity'
 import { Repository } from 'typeorm'
 import { InjectRepository } from '@nestjs/typeorm'
 import { mapOneToDto } from 'src/modules/common/utils/serialization.utils'
-import { type ItemsListSortingParamsDto } from '../dto/items-list-sorting-params.dto'
-import { SortingOrder } from 'src/modules/common/enums/sorting-order-enum'
 import { type LanguageEnum } from 'src/modules/common/enums/language.enum'
 import { Injectable } from '@nestjs/common'
 import { whereLanguageStatement } from './where-statements/where-language-statement'
@@ -22,10 +20,6 @@ export class ItemQuery implements DatabaseQuery<ItemsQueryParams, ItemResponseDt
     @InjectRepository(ItemEntity)
     protected readonly itemRepository: Repository<ItemEntity>
   ) {}
-
-  protected get defaultSortingParams(): ItemsListSortingParamsDto {
-    return { column: '"createdAt"', order: SortingOrder.DESC }
-  }
 
   public async fetch({ language, titleSlug, itemId }: ItemsQueryParams): Promise<ItemResponseDto> {
     const query = this.itemRepository
