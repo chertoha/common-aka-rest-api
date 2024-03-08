@@ -263,6 +263,11 @@ describe('ItemsController', () => {
       })
     })
 
+    afterAll(async () => {
+      await itemRepository.delete({})
+      await brandRepository.delete({})
+    })
+
     it(`should return requested item`, async () => {
       const { body } = await request(app.getHttpServer())
         .get(`/items/${itemTranslations[1].titleSlug}`)
@@ -306,11 +311,6 @@ describe('ItemsController', () => {
       const { body } = await request(app.getHttpServer()).get(`/items/${itemTranslations[1].titleSlug}`).expect(200)
 
       expect(body.translations.length).toEqual(2)
-    })
-
-    afterAll(async () => {
-      await itemRepository.delete({})
-      await brandRepository.delete({})
     })
   })
 
