@@ -10,6 +10,7 @@ import { ValidationPipe } from './modules/common/pipes/validation.pipe'
 import { AuthModule } from './modules/auth/auth.module'
 import { ServeStaticModule } from '@nestjs/serve-static'
 import { join } from 'path'
+import { SeedModule } from './database/seeds/seed.module'
 
 @Module({
   imports: [
@@ -25,7 +26,8 @@ import { join } from 'path'
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'public'),
       serveRoot: '/public'
-    })
+    }),
+    SeedModule
   ],
   controllers: [],
   providers: [
