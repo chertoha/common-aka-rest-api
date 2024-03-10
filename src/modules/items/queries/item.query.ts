@@ -71,7 +71,7 @@ export class ItemQuery implements DatabaseQuery<ItemsQueryParams, ItemResponseDt
             'item.id IN (' +
             qb
               .subQuery()
-              .select('item.id')
+              .select('translation."itemId"')
               .from(ItemTranslationEntity, 'translation')
               .where('translation."titleSlug" = :titleSlug')
               .getSql() +
