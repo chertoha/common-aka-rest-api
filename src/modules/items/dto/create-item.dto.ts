@@ -32,7 +32,7 @@ export class CreateItemDto {
   @Type(() => Number)
   brandId: number
 
-  @ApiProperty({ isArray: true })
+  @ApiProperty({ type: 'number', isArray: true })
   @IsOptional()
   @IsNumber({}, { each: true })
   @IsPositive({ each: true })
@@ -46,7 +46,7 @@ export class CreateItemDto {
   @ValidateNested({ each: true })
   translations: CreateItemTranslationDto[]
 
-  @ApiProperty()
+  @ApiProperty({ type: CreatePropertyDto, isArray: true })
   @IsOptional()
   @IsArray()
   @Type(() => CreatePropertyDto)
