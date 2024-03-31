@@ -15,6 +15,8 @@ import { ItemCreatorService } from './services/item-creator.service'
 import { ArticlesModule } from './sub-modules/articles/articles.module'
 import { ItemFileManager } from './services/item-files-manager.service'
 import { ItemUpdaterService } from './services/item-updater.service'
+import { ItemsImporter } from './services/items-importer.service'
+import { BrandEntity } from '../brands/entities/brand.entity'
 
 @Module({
   imports: [
@@ -26,10 +28,19 @@ import { ItemUpdaterService } from './services/item-updater.service'
       ItemTranslationEntity,
       PropertyEntity,
       PropertyTranslationEntity,
-      ArticleEntity
+      ArticleEntity,
+      BrandEntity
     ])
   ],
   controllers: [ItemsController],
-  providers: [ItemFileManager, ItemListQuery, ItemQuery, ItemCreatorService, ItemUpdaterService, ItemDeleterService]
+  providers: [
+    ItemFileManager,
+    ItemListQuery,
+    ItemQuery,
+    ItemCreatorService,
+    ItemUpdaterService,
+    ItemDeleterService,
+    ItemsImporter
+  ]
 })
 export class ItemsModule {}
