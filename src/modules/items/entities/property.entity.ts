@@ -56,7 +56,8 @@ export class PropertyEntity {
 
   @ManyToOne(() => PropertyEntity, (property) => property.parentProperty, {
     nullable: true,
-    onDelete: 'CASCADE'
+    onDelete: 'CASCADE',
+    cascade: ['insert']
   })
   @JoinColumn({ name: 'parentId', referencedColumnName: 'id' })
   parentProperty?: PropertyEntity

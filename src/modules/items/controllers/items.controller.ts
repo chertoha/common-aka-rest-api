@@ -9,6 +9,7 @@ import {
   Post,
   Put,
   Query,
+  UploadedFile,
   UploadedFiles,
   UseFilters,
   UseGuards,
@@ -28,12 +29,13 @@ import { ItemDeleterService } from '../services/item.deleter.service'
 import { AuthGuard } from 'src/modules/auth/guards/auth.guard'
 import { ApiBearerAuth, ApiHeader, ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { LanguageHeadersDto } from 'src/modules/common/dto/language-headers.dto'
-import { FileFieldsInterceptor } from '@nestjs/platform-express'
+import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express'
 import { CreateItemDto } from '../dto/create-item.dto'
 import { ItemCreatorService } from '../services/item-creator.service'
 import { UpdateItemDto } from '../dto/update-item.dto'
 import { ItemResponseDto } from '../dto/item-response.dto'
 import { ItemUpdaterService } from '../services/item-updater.service'
+import { ItemsImporter } from '../services/items-importer.service'
 
 @Controller('items')
 @UseFilters(EntityNotFoundExceptionFilter)
@@ -46,7 +48,8 @@ export class ItemsController {
     protected readonly itemQuery: ItemQuery,
     protected readonly itemDeleter: ItemDeleterService,
     protected readonly itemCreator: ItemCreatorService,
-    protected readonly itemUpdater: ItemUpdaterService
+    protected readonly itemUpdater: ItemUpdaterService,
+    protected readonly itemsImporter: ItemsImporter
   ) {}
 
   @Get()
@@ -117,5 +120,16 @@ export class ItemsController {
       files: { preview: preview?.at(0), gallery, drawings }
     })
     return await this.itemQuery.fetch({ language: null, itemId: updatedItem.id })
+  }
+
+  @Post('import')
+  @HttpCode(200)
+  @UseGuards(AuthGuard)
+  @ApiOkResponse({ type: OperationResultDto })
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOkResponse({ type: ItemResponseDto })
+  public async import(@UploadedFile() file: Express.Multer.File): Promise<OperationResultDto> {
+    await this.itemsImporter.import({ file })
+    return { success: true }
   }
 }

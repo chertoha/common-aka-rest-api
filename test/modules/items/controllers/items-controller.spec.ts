@@ -1,8 +1,10 @@
 import * as request from 'supertest'
 import { Test } from '@nestjs/testing'
 import { stringify } from 'qs'
+import { join } from 'path'
+import { omit } from 'lodash'
 import { getRepositoryToken } from '@nestjs/typeorm'
-import { type Repository } from 'typeorm'
+import { IsNull, Not, type Repository } from 'typeorm'
 import { type INestApplication } from '@nestjs/common'
 import { AppModule } from 'src/app.module'
 import { FactoryModule } from 'test/factories-module/factory.module'
@@ -19,14 +21,12 @@ import { PropertyTranslationFactory } from 'test/factories-module/factories/prop
 import { ArticleFactory } from 'test/factories-module/factories/article.factory'
 import { type ArticleEntity } from 'src/modules/items/entities/article.entity'
 import { TestAuthService } from 'test/test-core-module/services/test-auth.service'
-import { type UserEntity } from 'src/modules/users/entities/user.entity'
+import { UserEntity } from 'src/modules/users/entities/user.entity'
 import { UserFactory } from 'test/factories-module/factories/user.factory'
 import { TestCoreModule } from 'test/test-core-module/test-core-module'
 import { serialize } from 'test/test-core-module/utils/object-to-form-data.util'
 import { cleanDirectory } from 'test/test-core-module/utils/fs.utils'
-import { join } from 'path'
 import { PropertyTranslationEntity } from 'src/modules/items/entities/property-translation.entity'
-import { omit } from 'lodash'
 
 describe('ItemsController', () => {
   let app: INestApplication
@@ -44,6 +44,7 @@ describe('ItemsController', () => {
   let brandRepository: Repository<BrandEntity>
   let propertyRepository: Repository<PropertyEntity>
   let propertyTranslationRepository: Repository<PropertyTranslationEntity>
+  let userRepository: Repository<UserEntity>
   let testAuthService: TestAuthService
 
   beforeAll(async () => {
@@ -65,6 +66,8 @@ describe('ItemsController', () => {
     propertyRepository = moduleRef.get(getRepositoryToken(PropertyEntity))
     propertyTranslationRepository = moduleRef.get(getRepositoryToken(PropertyTranslationEntity))
     itemTranslationRepository = moduleRef.get(getRepositoryToken(ItemTranslationEntity))
+    userRepository = moduleRef.get(getRepositoryToken(UserEntity))
+    brandRepository = moduleRef.get(getRepositoryToken(BrandEntity))
     testAuthService = moduleRef.get(TestAuthService)
 
     await app.init()
@@ -764,6 +767,109 @@ describe('ItemsController', () => {
 
     afterAll(async () => {
       await brandRepository.delete({})
+    })
+  })
+
+  describe('POST /items/import', () => {
+    let user: UserEntity
+    let brand: BrandEntity
+    const brandName = 'test_brand'
+
+    beforeAll(async () => {
+      brand = await brandFactory.create({ name: brandName })
+      user = await userFactory.create()
+    })
+
+    afterEach(async () => {
+      await itemRepository.delete({})
+    })
+
+    afterAll(async () => {
+      await brandRepository.delete(brand)
+      await userRepository.delete(user)
+    })
+
+    it('200, imported new items', async () => {
+      await request(app.getHttpServer())
+        .post(`/items/import`)
+        .attach('file', 'test/fixtures/files/import-example.xlsx')
+        .set('Authorization', testAuthService.generateToken(user))
+        .expect(200)
+
+      await expect(itemRepository.count({ where: { brandId: brand.id } })).resolves.toEqual(1)
+    })
+
+    it('200, imported new item translations', async () => {
+      await request(app.getHttpServer())
+        .post(`/items/import`)
+        .attach('file', 'test/fixtures/files/import-example.xlsx')
+        .set('Authorization', testAuthService.generateToken(user))
+        .expect(200)
+
+      await expect(itemTranslationRepository.count()).resolves.toEqual(2)
+    })
+
+    it('200, imported new item properties', async () => {
+      await request(app.getHttpServer())
+        .post(`/items/import`)
+        .attach('file', 'test/fixtures/files/import-example.xlsx')
+        .set('Authorization', testAuthService.generateToken(user))
+        .expect(200)
+
+      await expect(propertyRepository.count({ where: { parentId: Not(IsNull()) } })).resolves.toEqual(2)
+    })
+
+    it('200, imported new item child properties', async () => {
+      await request(app.getHttpServer())
+        .post(`/items/import`)
+        .attach('file', 'test/fixtures/files/import-example.xlsx')
+        .set('Authorization', testAuthService.generateToken(user))
+        .expect(200)
+
+      await expect(propertyRepository.count({ where: { parentId: Not(IsNull()) } })).resolves.toEqual(2)
+    })
+
+    it('200, imported new translations for items', async () => {
+      await request(app.getHttpServer())
+        .post(`/items/import`)
+        .attach('file', 'test/fixtures/files/import-example.xlsx')
+        .set('Authorization', testAuthService.generateToken(user))
+        .expect(200)
+
+      await expect(itemTranslationRepository.count()).resolves.toEqual(2)
+    })
+
+    it('200, imported new translations for properties', async () => {
+      await request(app.getHttpServer())
+        .post(`/items/import`)
+        .attach('file', 'test/fixtures/files/import-example.xlsx')
+        .set('Authorization', testAuthService.generateToken(user))
+        .expect(200)
+
+      await expect(propertyTranslationRepository.count()).resolves.toEqual(8)
+    })
+
+    it('400, bad request, file was not provided', async () => {
+      await request(app.getHttpServer())
+        .post(`/items/import`)
+        .set('Authorization', testAuthService.generateToken(user))
+        .expect(400, {
+          message: 'Xlsx file was not provided',
+          error: 'Bad Request',
+          statusCode: 400
+        })
+    })
+
+    it('400, bad request, file was not provided', async () => {
+      await request(app.getHttpServer())
+        .post(`/items/import`)
+        .attach('file', 'test/fixtures/files/dummy.pdf')
+        .set('Authorization', testAuthService.generateToken(user))
+        .expect(400, {
+          message: 'Error during document parsing',
+          error: 'Bad Request',
+          statusCode: 400
+        })
     })
   })
 

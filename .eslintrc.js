@@ -1,4 +1,4 @@
-  const standard = require('eslint-config-standard')
+const standard = require('eslint-config-standard')
 
 module.exports = {
   parser: '@typescript-eslint/parser',
@@ -29,5 +29,6 @@ module.exports = {
     '@typescript-eslint/no-floating-promises': 'off',
     '@typescript-eslint/consistent-type-assertions': 'off',
     '@typescript-eslint/prefer-reduce-type-parameter': 'off',
+    '@typescript-eslint/no-unused-vars': ['error', { "varsIgnorePattern": "^_", "argsIgnorePattern": "^_" }]
   },
 };
