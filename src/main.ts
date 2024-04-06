@@ -9,7 +9,7 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe())
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)))
 
-  const documentBuilder = new DocumentBuilder().build()
+  const documentBuilder = new DocumentBuilder().addBearerAuth().build()
   const document = SwaggerModule.createDocument(app, documentBuilder)
   SwaggerModule.setup('docs', app, document)
 

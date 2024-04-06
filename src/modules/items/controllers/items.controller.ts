@@ -27,7 +27,7 @@ import { EntityNotFoundExceptionFilter } from 'src/modules/common/exception-filt
 import { OperationResultDto } from 'src/modules/common/dto/operation-result.dto'
 import { ItemDeleterService } from '../services/item.deleter.service'
 import { AuthGuard } from 'src/modules/auth/guards/auth.guard'
-import { ApiBearerAuth, ApiHeader, ApiOkResponse, ApiTags } from '@nestjs/swagger'
+import { ApiBearerAuth, ApiHeader, ApiOkResponse, ApiTags, ApiConsumes, ApiBody } from '@nestjs/swagger'
 import { LanguageHeadersDto } from 'src/modules/common/dto/language-headers.dto'
 import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express'
 import { CreateItemDto } from '../dto/create-item.dto'
@@ -39,7 +39,7 @@ import { ItemsImporter } from '../services/items-importer.service'
 
 @Controller('items')
 @UseFilters(EntityNotFoundExceptionFilter)
-@ApiHeader({ name: 'Accept-Language', enum: LanguageEnum })
+@ApiHeader({ name: 'Request-Language', enum: LanguageEnum })
 @ApiTags('Items')
 @ApiBearerAuth()
 export class ItemsController {
@@ -128,6 +128,18 @@ export class ItemsController {
   @ApiOkResponse({ type: OperationResultDto })
   @UseInterceptors(FileInterceptor('file'))
   @ApiOkResponse({ type: ItemResponseDto })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary'
+        }
+      }
+    }
+  })
   public async import(@UploadedFile() file: Express.Multer.File): Promise<OperationResultDto> {
     await this.itemsImporter.import({ file })
     return { success: true }

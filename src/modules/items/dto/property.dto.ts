@@ -1,5 +1,5 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger'
-import { Expose } from 'class-transformer'
+import { Expose, Type } from 'class-transformer'
 
 export class PropertyDto {
   @ApiProperty()
@@ -19,5 +19,7 @@ export class PropertyDto {
   order: number
 
   @ApiProperty({ type: () => OmitType(PropertyDto, ['childrenProperties']), isArray: true })
+  @Expose()
+  @Type(() => PropertyDto)
   childrenProperties: Array<Omit<PropertyDto, 'childrenProperties'>>
 }
